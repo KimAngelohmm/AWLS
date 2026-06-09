@@ -1,0 +1,247 @@
+const express = require('express');
+const { getPool } = require('../config/db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireRole } = require('../middleware/requireRole');
+
+const router = express.Router();
+
+router.use(authenticateToken, requireRole('hr'));
+
+function employeeNameExpr(alias = 'e') {
+  return `COALESCE(
+    u.full_name,
+    JSON_UNQUOTE(JSON_EXTRACT(${alias}.profile, '$.display_name')),
+    CONCAT('Employee ', SUBSTRING(${alias}.id, 1, 8))
+  )`;
+}
+
+router.get('/dashboard', async (req, res) => {
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    const [activeJobPostings] = await pool.query(
+      `SELECT jp.id, jp.title, jp.status, jp.department_id, jp.created_at, jp.updated_at,
+              d.name AS department_name
+       FROM JobPosition jp
+       LEFT JOIN departments d ON d.id = jp.department_id
+       WHERE jp.status = 'open'
+       ORDER BY jp.updated_at DESC
+       LIMIT 50`
+    );
+
+    const [pendingAssessments] = await pool.query(
+      `SELECT a.id, a.full_name, a.email, a.phone, a.hiring_decision, a.assessment_summary,
+              a.created_at, a.updated_at,
+              jp.id AS job_position_id, jp.title AS job_title
+       FROM Applicant a
+       INNER JOIN JobPosition jp ON jp.id = a.job_position_id
+       WHERE a.assessment_summary IS NOT NULL
+         AND TRIM(a.assessment_summary) <> ''
+         AND a.hiring_decision IN ('pending', 'under_review')
+         AND a.reviewed_by_user_id IS NULL
+       ORDER BY a.updated_at DESC
+       LIMIT 50`
+    );
+
+    const nameSql = employeeNameExpr('e');
+    
+    // Performance alerts query - commented out as PerformanceRecord table removed
+    const performanceAlerts = [];
+
+    // Lifecycle events query - commented out as LifecycleEvent table removed  
+    const lifecycleEvents = [];
+
+    // HR decisions query - commented out as HRDecision table removed
+    const hrDecisionsPending = [];
+
+    // ── Employee headcount stats ─────────────────────────────────────────────
+    const [[{ totalEmployees }]] = await pool.query(
+      `SELECT COUNT(*) AS totalEmployees
+       FROM Employee
+       WHERE employment_status = 'active'`
+    );
+
+    const [[{ addedThisMonth }]] = await pool.query(
+      `SELECT COUNT(*) AS addedThisMonth
+       FROM Employee
+       WHERE employment_status = 'active'
+         AND YEAR(created_at)  = YEAR(CURRENT_DATE())
+         AND MONTH(created_at) = MONTH(CURRENT_DATE())`
+    );
+
+    const [[{ removedThisMonth }]] = await pool.query(
+      `SELECT COUNT(*) AS removedThisMonth
+       FROM Employee
+       WHERE employment_status = 'inactive'
+         AND YEAR(updated_at)  = YEAR(CURRENT_DATE())
+         AND MONTH(updated_at) = MONTH(CURRENT_DATE())`
+    );
+
+    return res.json({
+      activeJobPostings,
+      pendingAssessments,
+      performanceAlerts,
+      lifecycleEvents,
+      hrDecisionsPending,
+      counts: {
+        activeJobPostings: activeJobPostings.length,
+        pendingAssessments: pendingAssessments.length,
+        performanceAlerts: performanceAlerts.length,
+        lifecycleEvents: lifecycleEvents.length,
+        hrDecisionsPending: hrDecisionsPending.length,
+        totalEmployees: Number(totalEmployees),
+        addedThisMonth: Number(addedThisMonth),
+        removedThisMonth: Number(removedThisMonth),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not load HR dashboard' });
+  }
+});
+
+router.get('/employees', async (req, res) => {
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    const [employees] = await pool.query(
+      `SELECT
+         u.id,
+         u.email,
+         u.role,
+         u.full_name,
+         u.is_active,
+         u.created_at,
+         e.id              AS employee_id,
+         e.employee_number,
+         e.employment_status,
+         jp.title          AS job_title,
+         d.name            AS department_name
+       FROM users u
+       LEFT JOIN Employee e    ON e.user_id = u.id
+       LEFT JOIN JobPosition jp ON jp.id = e.job_position_id
+       LEFT JOIN departments d  ON d.id = COALESCE(e.department_id, u.department_id)
+       ORDER BY u.created_at DESC`
+    );
+    return res.json({ employees });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not load employees' });
+  }
+});
+
+router.get('/messages', async (req, res) => {
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    console.log('[/hr/messages] User ID:', req.user?.id);
+    
+    // Get UserNotification messages for HR
+    const [messages] = await pool.query(
+      `SELECT 
+         un.id,
+         un.title,
+         un.body,
+         un.category AS type,
+         un.created_at,
+         un.read_at,
+         un.metadata,
+         un.entity_type,
+         un.entity_id
+       FROM UserNotification un
+       WHERE un.user_id = ?
+       ORDER BY un.created_at DESC
+       LIMIT 50`,
+      [req.user.id]
+    );
+
+    console.log('[/hr/messages] Found', messages.length, 'messages');
+
+    // Enrich messages with applicant context where applicable
+    const enrichedMessages = await Promise.all(messages.map(async (msg) => {
+      return {
+        id: msg.id,
+        title: msg.title,
+        body: msg.body,
+        type: msg.type,
+        created_at: msg.created_at,
+        read_at: msg.read_at,
+        metadata: msg.metadata ? JSON.parse(msg.metadata) : {}
+      };
+    }));
+
+    return res.json({ messages: enrichedMessages });
+  } catch (err) {
+    console.error('[/hr/messages] Error:', err.message);
+    console.error('[/hr/messages] Full error:', err);
+    return res.status(500).json({ error: 'Could not load messages' });
+  }
+});
+
+router.get('/lifecycle/overview', async (req, res) => {
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    // Get audit log entries from system activity tracking
+    // This pulls from UserNotification and system logs
+    const [auditLog] = await pool.query(
+      `SELECT
+         un.id,
+         un.title AS action,
+         un.entity_type,
+         un.entity_id,
+         un.body AS notes,
+         un.created_at,
+         un.metadata
+       FROM UserNotification un
+       WHERE un.category IN ('recruitment', 'hr_action', 'system')
+         AND un.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)
+       ORDER BY un.created_at DESC
+       LIMIT 500`
+    );
+
+    // If no notifications, return empty audit log
+    if (!auditLog.length) {
+      return res.json({ auditLog: [] });
+    }
+
+    // Format audit log entries
+    const formattedLog = auditLog.map((entry) => ({
+      id: entry.id,
+      action: entry.action || 'system_action',
+      entity_type: entry.entity_type || 'system',
+      entity_id: entry.entity_id || 'n/a',
+      notes: entry.notes,
+      created_at: entry.created_at,
+      metadata: entry.metadata ? JSON.parse(entry.metadata) : {}
+    }));
+
+    return res.json({ auditLog: formattedLog });
+  } catch (err) {
+    console.error('[/hr/lifecycle/overview] Error:', err.message);
+    return res.status(500).json({ error: 'Could not load audit log' });
+  }
+});
+
+module.exports = router;
+

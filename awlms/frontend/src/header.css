@@ -1,0 +1,219 @@
+/* ============================================
+   SUNNIES STUDIOS HEADER STYLES
+   ============================================ */
+
+.sunnies-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #252d42 100%);
+  border-bottom: 3px solid #22D3EE;
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4rem;
+}
+
+/* ============================================
+   LOGO SECTION
+   ============================================ */
+
+.header-logo {
+  flex-shrink: 0;
+}
+
+.logo-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-decoration: none;
+  transition: all 250ms ease-in-out;
+  align-items: flex-start;
+}
+
+.logo-link:hover {
+  transform: scale(1.02);
+}
+
+.logo-text {
+  color: #22D3EE;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.logo-subtitle {
+  color: #22D3EE;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   NAVIGATION LINKS
+   ============================================ */
+
+.header-nav {
+  flex: 1;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 250ms ease-in-out;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background-color: #22D3EE;
+  transform: translateX(-50%);
+  transition: width 250ms ease-in-out;
+}
+
+.nav-link:hover {
+  color: #22D3EE;
+}
+
+.nav-link:hover::after {
+  width: calc(100% - 2rem);
+}
+
+.nav-link-primary {
+  background-color: #22D3EE;
+  color: #1a1a2e;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+}
+
+.nav-link-primary:hover {
+  background-color: #06B6D4;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.nav-link-primary::after {
+  display: none;
+}
+
+/* ============================================
+   USER SECTION
+   ============================================ */
+
+.header-user {
+  flex-shrink: 0;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.user-name {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.user-role {
+  color: #22D3EE;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .header-container {
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .header-nav {
+    order: 3;
+    width: 100%;
+  }
+
+  .nav-links {
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .nav-link {
+    font-size: 0.875rem;
+    padding: 0.25rem 1rem;
+  }
+
+  .logo-image {
+    max-height: 50px;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .user-menu {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .header-nav {
+    order: 2;
+  }
+
+  .nav-links {
+    justify-content: space-between;
+  }
+
+  .nav-link {
+    flex: 1;
+    text-align: center;
+    font-size: 0.75rem;
+  }
+
+  .logo-image {
+    max-height: 45px;
+  }
+}

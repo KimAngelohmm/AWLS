@@ -1,0 +1,162 @@
+================================================================================
+  SUNNIES STUDIOS AWLMS - QUICK START
+================================================================================
+
+🚀 FASTEST WAY TO RUN THE SYSTEM:
+
+  1. Open: c:\Users\kiman\OneDrive\Documents\Figma\awlms\
+  2. Double-click: START_SYSTEM.bat
+  3. Wait for browser to open (http://localhost:5173)
+  4. Done! System is running.
+
+================================================================================
+
+📋 IF THAT DOESN'T WORK (Manual Method):
+
+Terminal 1 (MySQL):
+  net start MySQL80
+
+Terminal 2 (Backend):
+  cd c:\Users\kiman\OneDrive\Documents\Figma\awlms\backend
+  npm install
+  npm run dev
+  
+Terminal 3 (Frontend):
+  cd c:\Users\kiman\OneDrive\Documents\Figma\awlms\frontend
+  npm install
+  npm run dev
+
+Browser:
+  http://localhost:5173
+
+================================================================================
+
+🎮 DEMO ACCOUNTS:
+
+  HR Login:
+    Email: hr@sunniesstudios.com
+    Password: Demo123!
+
+  Manager Login:
+    Email: manager@sunniesstudios.com
+    Password: Demo123!
+
+  Employee Login:
+    Email: employee@sunniesstudios.com
+    Password: Demo123!
+
+================================================================================
+
+🔧 OTHER USEFUL SCRIPTS:
+
+  START_BACKEND.bat       - Start backend only
+  START_FRONTEND.bat      - Start frontend only
+  SEED_DATABASE.bat       - Seed 25 job positions
+  TERMINAL_STARTUP_GUIDE.md - Full instructions
+
+================================================================================
+
+🧪 QUICK TEST WORKFLOW:
+
+  1. Home page loads (http://localhost:5173)
+  2. Click "View Openings"
+  3. See 25 Sunnies Studios positions
+  4. Click "Apply Now"
+  5. Register: newuser@test.com / Password123
+  6. Fill application & upload resume
+  7. Click "Start Interview"
+  8. Allow webcam
+  9. Answer interview questions
+   10. Check HR dashboard (login as hr@sunniesstudios.com)
+  11. View your application with AI score
+
+================================================================================
+
+❌ COMMON ISSUES:
+
+  MySQL not starting?
+    - Make sure MySQL 5.7+ is installed
+    - Try: net start MySQL80
+    - Or open Services.msc and start MySQL80
+
+  Port already in use?
+    - taskkill /IM node.exe /F
+    - Then restart the scripts
+
+  No jobs showing?
+    - Run: SEED_DATABASE.bat
+    - Or: npm run seed && node scripts/seed-sunnies-positions.js
+
+  Can't connect to database?
+    - Check backend/.env has correct credentials
+    - Verify MySQL is running
+    - Test: mysql -u root -p -D awlms -e "SHOW TABLES;"
+
+================================================================================
+
+✅ WHAT YOU'LL SEE:
+
+  Frontend Terminal:
+    ✓ "Local: http://localhost:5173/"
+    ✓ "ready in XXX ms"
+
+  Backend Terminal:
+    ✓ "AWLMS backend listening on http://localhost:5000"
+    ✓ "Database health check: PASSED"
+
+  Browser:
+    ✓ Sunnies Studios home page
+    ✓ 25 job positions visible
+    ✓ No error messages
+
+================================================================================
+
+📧 EMAIL NOTIFICATIONS:
+
+  After applying or completing interview, check Gmail inbox for:
+    - "Application Received from Sunnies Studios"
+    - "Your Interview is Scheduled"
+    - "Interview Completed"
+
+================================================================================
+
+🎯 DEMO FOR PANELISTS:
+
+  Show them:
+    1. Job listing page (25 real positions)
+    2. Application process
+    3. Resume upload with AI scoring
+    4. Interview system with webcam
+    5. Tab-switch detection (try switching tabs!)
+    6. HR dashboard review
+    7. Employee lifecycle tracking
+    8. Email notifications
+
+  Time needed: ~15 minutes
+
+================================================================================
+
+💡 TIPS:
+
+  - System runs on:
+    Frontend: http://localhost:5173
+    Backend:  http://localhost:5000
+    MySQL:    localhost:3306
+
+  - To stop: Close terminal windows or run:
+    taskkill /IM node.exe /F
+    net stop MySQL80
+
+  - Full documentation in session folder:
+    C:\Users\kiman\.copilot\session-state\4f52155f-bb88-4b74-85ff-158a67cdcadf\
+
+  - First run takes ~2 minutes
+  - Subsequent runs take ~30 seconds
+
+================================================================================
+
+🎉 READY TO LAUNCH!
+
+  Next step: Double-click START_SYSTEM.bat
+
+================================================================================

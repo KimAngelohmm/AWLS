@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build/
+.env
+.email-outbox/
+*.log
+.DS_Store
