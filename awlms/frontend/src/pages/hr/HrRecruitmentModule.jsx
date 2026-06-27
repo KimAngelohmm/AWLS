@@ -46,7 +46,13 @@ function SendInterviewLinkModal({ applicant, interviewLink, onClose, onSend }) {
   const [email, setEmail] = useState(applicant?.email || '');
   const [hrEmail, setHrEmail] = useState('');
   const [subject, setSubject] = useState('');
+  const [regenerateLink, setRegenerateLink] = useState(false);
   const [sending, setSending] = useState(false);
+  const displayedInterviewLink = regenerateLink
+    ? 'A fresh interview link will be generated when you send this email.'
+    : (interviewLink && !interviewLink.endsWith('/undefined')
+        ? interviewLink
+        : 'An interview link will be generated when you send this email.');
 
   const handleSend = async () => {
     if (!email.trim()) {
@@ -59,8 +65,8 @@ function SendInterviewLinkModal({ applicant, interviewLink, onClose, onSend }) {
     }
     setSending(true);
     try {
-      await onSend(email, subject, hrEmail);
-      alert('Interview link sent successfully!');
+      await onSend(email, subject, hrEmail, regenerateLink);
+      alert(regenerateLink ? 'A new interview link was generated and sent successfully!' : 'Interview link sent successfully!');
       onClose();
     } catch (err) {
       alert('Error: ' + (err.message || 'Failed to send link'));
@@ -109,7 +115,18 @@ function SendInterviewLinkModal({ applicant, interviewLink, onClose, onSend }) {
         <div className="rec-modal-section">
           <p className="field-label" style={{ marginBottom: '0.5rem' }}>Interview Link</p>
           <div className="rec-link-display">
-            <code>{interviewLink}</code>
+            <code>{displayedInterviewLink}</code>
+          </div>
+          <div className="field" style={{ marginTop: '0.75rem' }}>
+            <span className="field-label">Link Options</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={regenerateLink}
+                onChange={(e) => setRegenerateLink(e.target.checked)}
+              />
+              <span>Generate a new interview link before sending this email</span>
+            </label>
           </div>
         </div>
 
@@ -457,15 +474,15 @@ export default function HrRecruitmentModule() {
     }
   }
 
-  async function sendInterviewLink(applicantId, email, subject, jobId, hrEmail) {
+  async function sendInterviewLink(applicantId, email, subject, jobId, hrEmail, regenerateToken = false) {
     setSaving(true);
     setLoadError('');
     try {
       await apiFetch(`/api/hr/recruitment/applicants/${applicantId}/send-interview-link`, {
         method: 'POST',
-        body: JSON.stringify({ email, subject, hrEmail }),
+        body: JSON.stringify({ email, subject, hrEmail, regenerateToken }),
       });
-      setSuccessMsg(`Interview link sent to ${email}`);
+      setSuccessMsg(regenerateToken ? `New interview link sent to ${email}` : `Interview link sent to ${email}`);
       setTimeout(() => setSuccessMsg(''), 3000);
       await loadApplicants(jobId);
       return { success: true };
@@ -923,7 +940,7 @@ export default function HrRecruitmentModule() {
                       <button type="button" className="btn-secondary" onClick={() => setViewTranscriptId(a.id)}>
                         Transcript
                       </button>
-                      <button type="button" className="btn-tertiary" disabled={saving} onClick={() => allowRetake(a.id)}>
+                      <button type="button" className="btn-secondary rec-btn-retake" disabled={saving} onClick={() => allowRetake(a.id)}>
                         Give Another Interview
                       </button>
                       <button type="button" className="btn-primary" disabled={saving} onClick={() => reviewApplicant(a.id, 'approved')}>
@@ -958,7 +975,7 @@ export default function HrRecruitmentModule() {
           applicant={sendLinkApplicant}
           interviewLink={`${origin}/interview/${sendLinkApplicant.interview_token}`}
           onClose={() => setSendLinkApplicant(null)}
-          onSend={(email, subject, hrEmail) => sendInterviewLink(sendLinkApplicant.id, email, subject, sendLinkApplicant.jobId, hrEmail)}
+          onSend={(email, subject, hrEmail, regenerateToken) => sendInterviewLink(sendLinkApplicant.id, email, subject, sendLinkApplicant.jobId, hrEmail, regenerateToken)}
         />
       )}
 
@@ -972,7 +989,7 @@ export default function HrRecruitmentModule() {
             loadRecruitment();
             reloadDash();
           }}
-          onSend={(email, subject, hrEmail) => sendInterviewLink(retakeApplicant.id, email, subject, retakeApplicant.jobId, hrEmail)}
+          onSend={(email, subject, hrEmail, regenerateToken) => sendInterviewLink(retakeApplicant.id, email, subject, retakeApplicant.jobId, hrEmail, regenerateToken)}
         />
       )}
     </div>

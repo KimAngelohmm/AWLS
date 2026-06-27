@@ -402,6 +402,7 @@ router.post('/applicants/:id/send-interview-link', async (req, res) => {
   const applicantEmail = String(req.body?.email || '').trim();
   const hrEmail = String(req.body?.hrEmail || '').trim();
   const subject = String(req.body?.subject || '').trim();
+  const regenerateToken = req.body?.regenerateToken === true;
 
   if (!applicantEmail) {
     return res.status(400).json({ error: 'email is required' });
@@ -419,7 +420,7 @@ router.post('/applicants/:id/send-interview-link', async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT a.id, a.full_name, a.email, a.interview_token, jp.title AS job_title
+      `SELECT a.id, a.full_name, a.email, a.interview_token, a.interview_status, jp.title AS job_title
        FROM Applicant a
        INNER JOIN JobPosition jp ON jp.id = a.job_position_id
        WHERE a.id = ? LIMIT 1`,
@@ -432,18 +433,19 @@ router.post('/applicants/:id/send-interview-link', async (req, res) => {
     const a = rows[0];
     let interviewToken = a.interview_token;
 
-    // Generate new interview token if not already created
-    if (!interviewToken) {
+    // Generate a fresh token on demand, or create one if the applicant does not have one yet.
+    if (regenerateToken || !interviewToken) {
       interviewToken = crypto.randomBytes(32).toString('hex');
       console.log(`[send-interview-link] Generated token for applicant ${req.params.id}: ${interviewToken}`);
       try {
+        const nextInterviewStatus = a.interview_status || 'pending_start';
         const updateResult = await pool.query(
           `UPDATE Applicant 
            SET interview_token = ?, 
-               interview_status = 'pending_start',
+               interview_status = ?,
                updated_at = CURRENT_TIMESTAMP
            WHERE id = ?`,
-          [interviewToken, req.params.id]
+          [interviewToken, nextInterviewStatus, req.params.id]
         );
         console.log(`[send-interview-link] Update successful. Affected rows:`, updateResult[0].affectedRows);
       } catch (updateErr) {
@@ -482,7 +484,13 @@ router.post('/applicants/:id/send-interview-link', async (req, res) => {
       console.error('[send-interview-link] Could not create notification:', notifyErr.message, notifyErr.sql);
     }
 
-    return res.json({ ok: true, message: 'Interview link sent successfully', interviewLink });
+    return res.json({
+      ok: true,
+      message: regenerateToken ? 'New interview link sent successfully' : 'Interview link sent successfully',
+      interviewLink,
+      interviewToken,
+      regenerated: regenerateToken,
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Could not send interview link' });

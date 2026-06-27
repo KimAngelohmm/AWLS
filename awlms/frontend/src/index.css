@@ -1191,6 +1191,34 @@ a {
   color: #fecaca;
 }
 
+.hr-shell .rec-btn-retake {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  appearance: button;
+  -webkit-appearance: button;
+}
+
+.hr-shell .rec-btn-retake:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+.hr-shell .rec-btn-retake:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 /* Dark-theme overrides for form inputs inside hr-shell */
 .hr-shell .field-input {
   background: #111827;

@@ -69,7 +69,7 @@ describe('recruitmentInterview — interview question / evaluation contract', ()
     assert.equal(normalizeStoredAiRecommendation(undefined), 'hire');
   });
 
-  it('buildInterviewStructuredContext normalizes JSON columns', () => {
+  it('buildInterviewStructuredContext normalizes JSON columns', async () => {
     const job = {
       title: 'Dev',
       description: 'd',
@@ -79,7 +79,7 @@ describe('recruitmentInterview — interview question / evaluation contract', ()
       interview_criteria: { rubric: true },
       performance_thresholds: null,
     };
-    const ctx = buildInterviewStructuredContext(job);
+    const ctx = await buildInterviewStructuredContext(job);
     assert.deepEqual(ctx.competency_requirements, { k: 'v' });
     assert.deepEqual(ctx.interview_criteria_rubric, { rubric: true });
     assert.equal(ctx.performance_expectations_for_role, null);
