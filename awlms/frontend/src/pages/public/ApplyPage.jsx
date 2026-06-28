@@ -32,6 +32,7 @@ export default function ApplyPage() {
   const [uploadStatus, setUploadStatus] = useState({});
   const [applicantId, setApplicantId] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
+  const [submitDocumentsLater, setSubmitDocumentsLater] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,22 +105,18 @@ export default function ApplyPage() {
     setSubmitting(true);
     setError('');
 
-    const uploadedCount = getUploadedDocumentCount();
-    if (uploadedCount < 3) {
-      setError('Please upload at least three (3) supporting documents before submitting your application.');
-      setSubmitting(false);
-      return;
-    }
-
-    for (const field of DOCUMENT_FIELDS) {
-      const fileState = documents[field.name];
-      if (!fileState.file) continue;
-      const fileError = validateFile(fileState.file);
-      if (fileError) {
-        updateDocument(field.name, { error: fileError });
-        setError('Please fix file upload errors before submitting.');
-        setSubmitting(false);
-        return;
+    // Only validate file errors if not submitting documents later
+    if (!submitDocumentsLater) {
+      for (const field of DOCUMENT_FIELDS) {
+        const fileState = documents[field.name];
+        if (!fileState.file) continue;
+        const fileError = validateFile(fileState.file);
+        if (fileError) {
+          updateDocument(field.name, { error: fileError });
+          setError('Please fix file upload errors before submitting.');
+          setSubmitting(false);
+          return;
+        }
       }
     }
 
@@ -133,6 +130,7 @@ export default function ApplyPage() {
           phone: form.phone.trim() || null,
           about_yourself: form.about_yourself.trim() || null,
           application_details: null,
+          submit_documents_later: submitDocumentsLater,
         }),
       });
 
@@ -142,7 +140,11 @@ export default function ApplyPage() {
         throw new Error('Application ID missing from server response.');
       }
 
-      await uploadApplicantDocuments(applicantId, accessToken);
+      // Only upload documents if not submitting later
+      if (!submitDocumentsLater) {
+        await uploadApplicantDocuments(applicantId, accessToken);
+      }
+      
       setSubmitted(true);
       setApplicantId(applicantId);
       setAccessToken(accessToken);
@@ -181,16 +183,34 @@ export default function ApplyPage() {
             </p>
             {applicantId && accessToken ? (
               <div className="apply-note">
-                <p>
-                  Manage your submitted documents anytime using this secure link:
-                </p>
-                <p>
-                  <Link
-                    to={`/applicant-documents?applicantId=${encodeURIComponent(applicantId)}&token=${encodeURIComponent(accessToken)}`}
-                  >
-                    View and manage documents
-                  </Link>
-                </p>
+                {submitDocumentsLater ? (
+                  <>
+                    <p><strong>Important:</strong> Please upload your required documents (Resume, Government ID, Photo) to complete your application.</p>
+                    <p>
+                      Upload your documents using this secure link:
+                    </p>
+                    <p>
+                      <Link
+                        to={`/applicant-documents?applicantId=${encodeURIComponent(applicantId)}&token=${encodeURIComponent(accessToken)}`}
+                      >
+                        Upload Missing Documents →
+                      </Link>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Manage your submitted documents anytime using this secure link:
+                    </p>
+                    <p>
+                      <Link
+                        to={`/applicant-documents?applicantId=${encodeURIComponent(applicantId)}&token=${encodeURIComponent(accessToken)}`}
+                      >
+                        View and manage documents
+                      </Link>
+                    </p>
+                  </>
+                )}
               </div>
             ) : null}
             <p className="apply-foot">
@@ -246,18 +266,47 @@ export default function ApplyPage() {
 
               <div className="supporting-documents-section">
                 <h3>Supporting Documents</h3>
-                <p className="apply-note">Required documents must be uploaded before submission. Optional documents are encouraged but not required.</p>
+                
+                <label className="field checkbox-field">
+                  <input
+                    type="checkbox"
+                    checked={submitDocumentsLater}
+                    onChange={(e) => {
+                      setSubmitDocumentsLater(e.target.checked);
+                      // Clear file errors when toggling
+                      if (e.target.checked) {
+                        setDocuments((prev) => {
+                          const cleared = {};
+                          Object.keys(prev).forEach((key) => {
+                            cleared[key] = { ...prev[key], error: '' };
+                          });
+                          return cleared;
+                        });
+                      }
+                    }}
+                  />
+                  <span className="field-label-inline">
+                    <strong>I will submit my documents later</strong>
+                    <span className="muted"> — You can upload required documents (Resume, Government ID, Photo) after submitting your application.</span>
+                  </span>
+                </label>
+
+                <p className="apply-note">
+                  {submitDocumentsLater
+                    ? 'Documents can be uploaded later. You will receive a link to upload them.'
+                    : 'Required documents must be uploaded before submission. Optional documents are encouraged but not required.'}
+                </p>
                 {DOCUMENT_FIELDS.map((field) => (
                   <DocumentUploadField
                     key={field.name}
                     label={field.label}
                     name={field.name}
-                    required={field.required}
+                    required={field.required && !submitDocumentsLater}
                     file={documents[field.name].file}
                     status={uploadStatus[field.name]}
                     error={documents[field.name].error}
                     onFileChange={(nextFile) => {
-                      const fileError = nextFile ? validateFile(nextFile) : field.required ? 'File is required.' : '';
+                      const fileError = nextFile ? validateFile(nextFile) : (field.required && !submitDocumentsLater) ? 'File is required.' : '';
                       updateDocument(field.name, { file: nextFile, error: fileError });
                       setUploadStatus((prev) => ({ ...prev, [field.name]: nextFile ? 'ready' : 'removed' }));
                     }}

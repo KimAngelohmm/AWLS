@@ -39,6 +39,7 @@ export default function ApplicantDocumentsPage() {
       return {
         ...field,
         status: doc ? doc.verification_status || 'uploaded' : 'pending',
+        isRequired: field.required,
       };
     });
   }, [documentsByType]);
@@ -173,11 +174,11 @@ export default function ApplicantDocumentsPage() {
         {authorized ? (
           <>
             <div className="document-checklist">
-              <h2>Required Documents Checklist</h2>
+              <h2>Documents Checklist</h2>
               <p className="muted">
                 {totalUploadedCount >= 3
-                  ? `You have uploaded ${totalUploadedCount} documents. Minimum upload requirement met.`
-                  : `You have uploaded ${totalUploadedCount} documents. At least 3 documents are required to keep your application active.`}
+                  ? `You have uploaded ${totalUploadedCount} documents. Minimum requirement met.`
+                  : `You have uploaded ${totalUploadedCount} documents. Please upload at least 3 documents including all required ones (marked with *) to complete your application.`}
               </p>
               <ul>
                 {documentStatus.map((field) => (
@@ -191,7 +192,7 @@ export default function ApplicantDocumentsPage() {
                         : 'document-status--pending'
                     }
                   >
-                    <strong>{field.label}</strong> — {field.status === 'pending' ? 'Pending' : field.status === 'verified' ? 'Verified' : 'Uploaded'}
+                    <strong>{field.isRequired ? '* ' : ''}{field.label}</strong> — {field.status === 'pending' ? 'Missing' : field.status === 'verified' ? 'Verified' : 'Uploaded'}
                   </li>
                 ))}
               </ul>

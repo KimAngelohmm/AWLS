@@ -259,6 +259,7 @@ function TranscriptModal({ applicantId, onClose }) {
 function statusLabel(decision) {
   const labels = {
     pending_review: 'Pending review',
+    pending_documents: 'Pending documents',
     interview_invited: 'Interview invited',
     under_review: 'Under review',
     approved: 'Approved',
@@ -817,9 +818,16 @@ export default function HrRecruitmentModule() {
                                         <td>
                                           <div className="hr-cell-title">{a.full_name}</div>
                                           <div className="muted hr-cell-sub">{a.email}</div>
+                                          {a.missing_required_documents > 0 && (
+                                            <span className="hr-badge hr-badge--warning" title="Missing required documents">
+                                              ⚠ Pending Documents
+                                            </span>
+                                          )}
                                         </td>
                                         <td>
-                                          <span className="hr-pill">{statusLabel(a.hiring_decision)}</span>
+                                          <span className={`hr-pill ${a.hiring_decision === 'pending_documents' ? 'hr-pill--warning' : ''}`}>
+                                            {statusLabel(a.hiring_decision)}
+                                          </span>
                                         </td>
                                         <td className="muted">{a.interview_status || '—'}</td>
                                         <td>
