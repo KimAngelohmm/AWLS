@@ -40,14 +40,8 @@ The schema supports recruitment workflows:
 After applying `schema.sql`, run the seed scripts to create real login accounts:
 
 ```bash
-# Admin / HR accounts for the project group
-node backend/scripts/seed-admin-accounts.js
-
 # Demo accounts (hr@sunniesstudios.com, manager@sunniesstudios.com, employee@sunniesstudios.com — password: Demo123!)
 node backend/scripts/seed-demo-users.js
-
-# Link existing employee-role users to Employee records (safe to re-run)
-node backend/scripts/seed-employee-profiles.js
 ```
 
 ---
