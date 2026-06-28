@@ -139,6 +139,7 @@ router.post('/apply', async (req, res) => {
   const phone = req.body?.phone ? String(req.body.phone).trim() : null;
   const aboutYourself = req.body?.about_yourself != null ? String(req.body.about_yourself).trim() : null;
   const applicationDetails = req.body?.application_details ?? null;
+  const submitDocumentsLater = req.body?.submit_documents_later === true;
 
   if (!jobPositionId || !fullName || !email) {
     return res.status(400).json({ error: 'job_position_id, full_name, and email are required' });
@@ -164,13 +165,18 @@ router.post('/apply', async (req, res) => {
     const applicantId = crypto.randomUUID();
     let documentAccessToken = generateDocumentAccessToken();
 
+    // If submitting documents later, status is pending_documents
+    // Otherwise, status is pending_review (documents included in initial submission)
+    const documentsPending = submitDocumentsLater ? 1 : 0;
+    const hiringDecision = submitDocumentsLater ? 'pending_documents' : 'pending_review';
+
     try {
       await pool.query(
         `INSERT INTO Applicant (
            id, job_position_id, full_name, email, phone, application_details, about_yourself,
            document_access_token, interview_token, interview_status, interview_messages,
-           interview_transcript, assessment_summary, hiring_decision
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pending_start', NULL, NULL, NULL, 'pending_review')`,
+           interview_transcript, assessment_summary, hiring_decision, documents_pending
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pending_start', NULL, NULL, NULL, ?, ?)`,
         [
           applicantId,
           jobPositionId,
@@ -180,6 +186,8 @@ router.post('/apply', async (req, res) => {
           applicationDetails ? JSON.stringify(applicationDetails) : null,
           aboutYourself || null,
           documentAccessToken,
+          hiringDecision,
+          documentsPending,
         ]
       );
     } catch (err) {
@@ -192,8 +200,8 @@ router.post('/apply', async (req, res) => {
               `INSERT INTO Applicant (
                  id, job_position_id, full_name, email, phone, application_details, about_yourself,
                  document_access_token, interview_token, interview_status, interview_messages,
-                 interview_transcript, assessment_summary, hiring_decision
-               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pending_start', NULL, NULL, NULL, 'pending_review')`,
+                 interview_transcript, assessment_summary, hiring_decision, documents_pending
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pending_start', NULL, NULL, NULL, ?, ?)`,
               [
                 applicantId,
                 jobPositionId,
@@ -203,6 +211,8 @@ router.post('/apply', async (req, res) => {
                 applicationDetails ? JSON.stringify(applicationDetails) : null,
                 aboutYourself || null,
                 documentAccessToken,
+                hiringDecision,
+                documentsPending,
               ]
             );
           } catch (innerErr) {
@@ -226,11 +236,15 @@ router.post('/apply', async (req, res) => {
       console.error('[email] application confirmation failed:', e)
     );
 
+    const message = submitDocumentsLater
+      ? 'Application received. You can submit your documents later using the document portal link.'
+      : 'Application received. You will be contacted by email if selected for an AI interview.';
+
     return res.status(201).json({
       applicantId,
       documentAccessToken,
-      message:
-        'Application received. You will be contacted by email if selected for an AI interview.',
+      documentsPending: submitDocumentsLater,
+      message,
     });
   } catch (err) {
     console.error(err);

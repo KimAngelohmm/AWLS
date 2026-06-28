@@ -14,6 +14,34 @@ const { notifyAllHr } = require('../services/userNotifications');
 
 const router = express.Router();
 
+// Required document types that must be uploaded for application to be complete
+const REQUIRED_DOCUMENT_TYPES = ['resume', 'government_id', 'photo'];
+
+async function checkAndUpdateDocumentPendingStatus(pool, applicantId) {
+  try {
+    // Get all required documents for this applicant
+    const [uploadedDocs] = await pool.query(
+      `SELECT DISTINCT document_type FROM ApplicantDocuments
+       WHERE applicant_id = ? AND document_type IN (?)`,
+      [applicantId, REQUIRED_DOCUMENT_TYPES]
+    );
+    
+    const uploadedTypes = new Set(uploadedDocs.map(d => d.document_type));
+    const allRequiredUploaded = REQUIRED_DOCUMENT_TYPES.every(type => uploadedTypes.has(type));
+    
+    if (allRequiredUploaded) {
+      // All required documents uploaded - update status
+      await pool.query(
+        `UPDATE Applicant SET documents_pending = FALSE, hiring_decision = 'pending_review'
+         WHERE id = ? AND documents_pending = TRUE`,
+        [applicantId]
+      );
+    }
+  } catch (err) {
+    console.error('Error checking document pending status:', err);
+  }
+}
+
 async function insertDocumentHistory(pool, doc) {
   const [historyRows] = await pool.query(
     `SELECT MAX(version_number) AS max_version
@@ -183,6 +211,9 @@ router.post('/upload-document', upload.single('file'), async (req, res) => {
         ]
       );
 
+      // Check if all required documents are now uploaded
+      await checkAndUpdateDocumentPendingStatus(pool, resolvedApplicantId);
+
       await notifyHrAboutDocument(pool, resolvedApplicantId, document_type, 'replaced', existingDoc.id);
 
       return res.status(200).json({
@@ -213,6 +244,9 @@ router.post('/upload-document', upload.single('file'), async (req, res) => {
         now,
       ]
     );
+
+    // Check if all required documents are now uploaded
+    await checkAndUpdateDocumentPendingStatus(pool, resolvedApplicantId);
 
     await notifyHrAboutDocument(pool, resolvedApplicantId, document_type, 'uploaded', documentId);
 
