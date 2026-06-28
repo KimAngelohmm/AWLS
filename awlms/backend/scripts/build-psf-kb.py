@@ -91,7 +91,7 @@ files_info = [
          'Cybersecurity Analyst', 'QA Engineer', 'DevOps Engineer', 'Systems Architect',
          'Infrastructure Support Engineer', 'Database Administrator'],
         'Covers software engineering, cybersecurity, DevOps, QA, and infrastructure '
-        'roles across the software development lifecycle.'
+        'roles across software development delivery.'
     ),
     (
         'PSF - Business Development.pdf',

@@ -393,7 +393,7 @@ router.patch('/:userId', async (req, res) => {
 
     // Update employment status (for linked Employee record) if provided
     if (employment_status !== undefined && employment_status !== null) {
-      const validStatuses = ['active', 'inactive', 'resigned', 'terminated'];
+      const validStatuses = ['active', 'inactive'];
       if (!validStatuses.includes(employment_status)) {
         return res.status(400).json({ error: 'Invalid employment status' });
       }

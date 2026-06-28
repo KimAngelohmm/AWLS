@@ -8,8 +8,6 @@ const { openaiChatCompletion } = require('./openaiClient');
 
 const DOMAIN = {
   RECRUITMENT: 'recruitment',
-  LIFECYCLE: 'lifecycle',
-  MONITORING: 'monitoring',
 };
 
 function logDebug(domain, operation, extra) {
@@ -39,7 +37,7 @@ function normalizeJsonField(val) {
  *
  * @param {object} params
  * @param {string} params.domain - DOMAIN.* 
- * @param {string} params.operation - e.g. interview_turn, formal_notification, resignation_chat
+ * @param {string} params.operation - e.g. interview_turn, formal_notification
  * @param {object} [params.structuredContext] - Role requirements, competencies, employee snapshots, etc.
  * @param {string} params.systemPrompt - Role-specific instructions (must reference CONTEXT truthfully).
  * @param {Array<{role:string,content:string}>} params.messages - Chat history / user turns (no system role).

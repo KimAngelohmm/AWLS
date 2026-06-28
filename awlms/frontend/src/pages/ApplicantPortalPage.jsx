@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { publicApiFetch } from '../lib/publicApi.js';
 
 export default function ApplicantPortalPage() {
   const [jobs, setJobs] = useState([]);
@@ -14,21 +15,11 @@ export default function ApplicantPortalPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/public/available-jobs', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await publicApiFetch('/api/recruitment/jobs');
       setJobs(data.jobs || []);
     } catch (err) {
       console.error('Fetch jobs error:', err);
-      setError(err.message || 'Failed to retrieve job listings');
+      setError(err.body?.error || err.message || 'Failed to retrieve job listings');
     } finally {
       setLoading(false);
     }
@@ -75,7 +66,7 @@ export default function ApplicantPortalPage() {
                 <div key={job.id} className="applicant-job-card">
                   <div className="applicant-job-card-header">
                     <h3 className="applicant-job-title">{job.title}</h3>
-                    <span className="applicant-job-department">{job.department || 'N/A'}</span>
+                    <span className="applicant-job-department">{job.department_name || 'N/A'}</span>
                   </div>
 
                   <div className="applicant-job-card-body">

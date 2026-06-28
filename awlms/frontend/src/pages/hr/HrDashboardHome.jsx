@@ -39,26 +39,17 @@ export default function HrDashboardHome() {
   const pending = data?.pendingAssessments ?? [];
   const counts = data?.counts ?? {};
 
-  const totalEmployees = counts.totalEmployees ?? 0;
-  const addedThisMonth = counts.addedThisMonth ?? 0;
-  const removedThisMonth = counts.removedThisMonth ?? 0;
-  const netThisMonth = addedThisMonth - removedThisMonth;
   const activeInterviewsCount = counts.pendingAssessments ?? pending.length;
   const openPositionsCount = counts.activeJobPostings ?? jobs.length;
-
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
     <div className="hdb-root">
       {/* Stat cards */}
       <div className="hdb-stats">
         <div className="hdb-stat">
-          <p className="hdb-stat-label">TOTAL EMPLOYEES</p>
-          <p className="hdb-stat-value">{totalEmployees}</p>
-          <p className={`hdb-stat-sub ${netThisMonth >= 0 ? 'hdb-stat-sub--green' : 'hdb-stat-sub--red'}`}>
-            {netThisMonth >= 0 ? `+${netThisMonth}` : netThisMonth} this month
-          </p>
+          <p className="hdb-stat-label">TOTAL APPLICANTS</p>
+          <p className="hdb-stat-value">{counts.totalApplicants ?? 0}</p>
+          <p className="hdb-stat-sub hdb-stat-sub--muted">All time</p>
         </div>
 
         <div className="hdb-stat">
@@ -68,7 +59,7 @@ export default function HrDashboardHome() {
         </div>
 
         <div className="hdb-stat">
-          <p className="hdb-stat-label">PENDING ACTIONS</p>
+          <p className="hdb-stat-label">PENDING ASSESSMENTS</p>
           <p className="hdb-stat-value">{activeInterviewsCount > 0 ? Math.min(activeInterviewsCount, 5) : 0}</p>
           <p className={`hdb-stat-sub ${activeInterviewsCount > 0 ? 'hdb-stat-sub--red' : 'hdb-stat-sub--muted'}`}>
             {activeInterviewsCount > 0 ? `${Math.min(activeInterviewsCount, 3)} require action` : 'All clear'}
@@ -79,7 +70,7 @@ export default function HrDashboardHome() {
           <p className="hdb-stat-label">OPEN POSITIONS</p>
           <p className="hdb-stat-value">{openPositionsCount}</p>
           <p className="hdb-stat-sub hdb-stat-sub--muted">
-            {openPositionsCount > 0 ? `${Math.min(openPositionsCount, 4)} auto-reopened` : 'No positions'}
+            {openPositionsCount > 0 ? `${Math.min(openPositionsCount, 4)} open positions` : 'No open positions'}
           </p>
         </div>
       </div>
@@ -126,22 +117,8 @@ export default function HrDashboardHome() {
           )}
         </section>
 
-        {/* Performance Monitoring section */}
-        <section className="hdb-panel hdb-panel--alerts">
-          <div className="hdb-panel-head">
-            <h2 className="hdb-panel-title">Performance Alerts</h2>
-            <Link to="/hr/monitoring" className="hdb-view-all">See all →</Link>
-          </div>
-          <p className="muted" style={{ padding: '1rem 0' }}>
-            Real-time performance monitoring dashboard
-          </p>
-          <Link to="/hr/monitoring" className="btn btn-secondary">
-            View Monitoring ✦
-          </Link>
-        </section>
-
         {/* Recruitment Pipeline section */}
-        <section className="hdb-panel hdb-panel--lifecycle">
+        <section className="hdb-panel hdb-panel--pipeline">
           <div className="hdb-panel-head">
             <h2 className="hdb-panel-title">Recruitment Pipeline</h2>
             <Link to="/hr/recruitment" className="hdb-view-all">Manage →</Link>

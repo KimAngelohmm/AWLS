@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../header.css';
 
 /**
- * SunniesHeader Component
- * Main navigation header with Sunnies Studios branding
+ * AppHeader Component
+ * Main navigation header for the AWLMS recruitment system
  * Colors: Black, White, Caramel
  */
 export default function SunniesHeader() {
@@ -24,8 +24,8 @@ export default function SunniesHeader() {
         {/* Logo Section */}
         <div className="header-logo">
           <Link to="/" className="logo-link">
-            <span className="logo-text">SUNNIES STUDIOS</span>
-            <span className="logo-subtitle">HR SYSTEM</span>
+            <span className="logo-text">AWLMS</span>
+            <span className="logo-subtitle">Recruitment System</span>
           </Link>
         </div>
 

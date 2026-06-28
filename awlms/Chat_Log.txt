@@ -1,0 +1,1 @@
+{"transcript":"(Full JSONL transcript saved separately due to size.)\nSee: c:\\Users\\kiman\\AppData\\Roaming\\Code\\User\\workspaceStorage\\c6abf0f5ee40dc62237e8bb692f4d276\\GitHub.copilot-chat\\transcripts\\46fcfdd9-3771-4f84-899a-c2971a3a7bff.jsonl"}

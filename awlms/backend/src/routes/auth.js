@@ -283,23 +283,14 @@ router.get('/profile-details', authenticateToken, async (req, res) => {
     }
     const user = userRows[0];
 
-    // Fetch linked Employee record (hire date + lifecycle event)
+    // Fetch linked Employee record (hire date and role assignment)
     const [empRows] = await pool.query(
       `SELECT e.id AS employee_id, e.employee_number, e.hire_date, e.employment_status,
               jp.title AS job_title,
-              d.name AS department_name,
-              le.event_type AS lifecycle_event_type,
-              le.created_at AS lifecycle_event_date
+              d.name AS department_name
        FROM Employee e
        LEFT JOIN JobPosition jp ON jp.id = e.job_position_id
        LEFT JOIN departments d ON d.id = COALESCE(e.department_id, ?)
-       LEFT JOIN (
-         SELECT employee_id, event_type, created_at
-         FROM LifecycleEvent
-         WHERE event_type IN ('promotion','termination','resignation')
-         ORDER BY created_at DESC
-         LIMIT 1
-       ) le ON le.employee_id = e.id
        WHERE e.user_id = ?
        LIMIT 1`,
       [user.department_id, req.user.id]
@@ -327,8 +318,6 @@ router.get('/profile-details', authenticateToken, async (req, res) => {
         employment_status: emp.employment_status,
         job_title: emp.job_title,
         department_name: emp.department_name,
-        lifecycle_event_type: emp.lifecycle_event_type,
-        lifecycle_event_date: emp.lifecycle_event_date,
       } : null,
     });
   } catch (err) {

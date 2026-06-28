@@ -9,12 +9,7 @@ const nav = [
     section: 'MODULES',
     items: [
       { to: '/hr/recruitment', label: 'Recruitment' },
-      { to: '/hr/monitoring', label: 'Monitoring' },
-    ],
-  },
-  {
-    section: 'REPORTS',
-    items: [
+      { to: '/hr/documents', label: 'Document Verification' },
       { to: '/hr/ai-reports', label: 'AI Reports' },
       { to: '/hr/employees', label: 'Employees' },
     ],
@@ -49,9 +44,8 @@ function HrHomeAiChat() {
   const { data } = useHrDashboard();
   if (!isHome || isAiChat) return null;
 
-  const alerts = data?.performanceAlerts ?? [];
-  const decisions = data?.hrDecisionsPending ?? [];
-  return <AiChatBubble notificationCount={alerts.length + decisions.length} />;
+  const pending = data?.counts?.pendingAssessments ?? 0;
+  return <AiChatBubble notificationCount={pending} />;
 }
 
 export default function HrLayout() {
@@ -77,7 +71,7 @@ export default function HrLayout() {
           {/* Brand */}
           <div className="hr-sidebar-brand">
             <div style={{ width: 32, height: 32, background: '#C4956D', borderRadius: 6, flexShrink: 0 }} />
-            <span className="hr-sidebar-logo">SUNNIES</span>
+            <span className="hr-sidebar-logo">AWLMS</span>
           </div>
 
           {/* Nav */}
@@ -135,7 +129,7 @@ export default function HrLayout() {
           {/* Topbar */}
           <header className="hr-topbar">
             <div className="hr-topbar-left">
-              <p className="hr-topbar-title">HR Dashboard</p>
+              <p className="hr-topbar-title">Recruitment Dashboard</p>
               <p className="hr-topbar-date">{getTodayLabel()}</p>
             </div>
             <div className="hr-topbar-right">
@@ -147,8 +141,8 @@ export default function HrLayout() {
                 <input
                   className="hr-search-input"
                   type="search"
-                  placeholder="Search employees, roles…"
-                  aria-label="Search employees and roles"
+                  placeholder="Search applicants, positions…"
+                  aria-label="Search applicants and positions"
                 />
               </div>
               <button type="button" className="btn-secondary" onClick={handleLogout}>

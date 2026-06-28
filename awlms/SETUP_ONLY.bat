@@ -32,6 +32,10 @@ echo Installing backend dependencies...
 call npm install
 
 echo.
+echo Ensuring database schema exists...
+call npm run db:ensure
+
+echo.
 echo Running database seed...
 call npm run seed
 

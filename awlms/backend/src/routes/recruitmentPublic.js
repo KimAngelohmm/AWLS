@@ -15,6 +15,10 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function generateDocumentAccessToken() {
+  return crypto.randomBytes(48).toString('hex');
+}
+
 function parseMessages(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
@@ -158,14 +162,15 @@ router.post('/apply', async (req, res) => {
     const job = jobs[0];
 
     const applicantId = crypto.randomUUID();
+    let documentAccessToken = generateDocumentAccessToken();
 
     try {
       await pool.query(
         `INSERT INTO Applicant (
            id, job_position_id, full_name, email, phone, application_details, about_yourself,
-           interview_token, interview_status, interview_messages,
+           document_access_token, interview_token, interview_status, interview_messages,
            interview_transcript, assessment_summary, hiring_decision
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'pending_start', NULL, NULL, NULL, 'pending_review')`,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pending_start', NULL, NULL, NULL, 'pending_review')`,
         [
           applicantId,
           jobPositionId,
@@ -174,13 +179,47 @@ router.post('/apply', async (req, res) => {
           phone,
           applicationDetails ? JSON.stringify(applicationDetails) : null,
           aboutYourself || null,
+          documentAccessToken,
         ]
       );
     } catch (err) {
       if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({ error: 'You have already applied to this position with this email.' });
+        const msg = String(err.sqlMessage || err.message || '');
+        if (msg.includes('document_access_token')) {
+          documentAccessToken = generateDocumentAccessToken();
+          try {
+            await pool.query(
+              `INSERT INTO Applicant (
+                 id, job_position_id, full_name, email, phone, application_details, about_yourself,
+                 document_access_token, interview_token, interview_status, interview_messages,
+                 interview_transcript, assessment_summary, hiring_decision
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pending_start', NULL, NULL, NULL, 'pending_review')`,
+              [
+                applicantId,
+                jobPositionId,
+                fullName,
+                email,
+                phone,
+                applicationDetails ? JSON.stringify(applicationDetails) : null,
+                aboutYourself || null,
+                documentAccessToken,
+              ]
+            );
+          } catch (innerErr) {
+            if (innerErr.code === 'ER_DUP_ENTRY' && String(innerErr.sqlMessage || innerErr.message || '').includes('document_access_token')) {
+              return res.status(500).json({ error: 'Could not generate a unique document access token. Please try again.' });
+            }
+            if (innerErr.code === 'ER_DUP_ENTRY') {
+              return res.status(409).json({ error: 'You have already applied to this position with this email.' });
+            }
+            throw innerErr;
+          }
+        } else {
+          return res.status(409).json({ error: 'You have already applied to this position with this email.' });
+        }
+      } else {
+        throw err;
       }
-      throw err;
     }
 
     sendApplicationConfirmation({ to: email, fullName, jobTitle: job.title }).catch((e) =>
@@ -189,6 +228,7 @@ router.post('/apply', async (req, res) => {
 
     return res.status(201).json({
       applicantId,
+      documentAccessToken,
       message:
         'Application received. You will be contacted by email if selected for an AI interview.',
     });

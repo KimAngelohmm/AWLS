@@ -29,9 +29,9 @@ export default function CareersPage() {
   return (
     <div className="careers-page">
       <section className="careers-hero">
-        <h1 className="careers-hero-title">Join Our Team at Sunnies Studios</h1>
+        <h1 className="careers-hero-title">Apply with AWLMS</h1>
         <p className="careers-hero-sub">
-          Discover exciting career opportunities in retail eyewear. Apply online and complete our AI-powered interview process. We look forward to meeting you!
+          Discover open roles and submit your application through our AI-powered recruitment experience. Upload your documents, track your application, and move forward with confidence.
         </p>
       </section>
 

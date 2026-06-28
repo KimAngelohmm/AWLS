@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../lib/api.js';
 
 const DEFAULT_WELCOME =
-  "Hi! I'm your AWLMS Assistant. I can help with HR tasks, draft communications, answer workforce questions, or walk you through the system. What do you need?";
+  "Hi! I'm your AWLMS Assistant. I can help with HR tasks, draft communications, answer recruitment questions, or walk you through the system. What do you need?";
 
 const DEFAULT_SUGGESTIONS = [
   'Draft an offer letter',
   'Summarize pending decisions',
-  'How do I process a resignation?',
   'What positions are open?',
+  'Help me understand the application process',
 ];
 
 export default function AiChatBubble({

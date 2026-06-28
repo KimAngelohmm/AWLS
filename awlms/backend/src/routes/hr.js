@@ -7,14 +7,6 @@ const router = express.Router();
 
 router.use(authenticateToken, requireRole('hr'));
 
-function employeeNameExpr(alias = 'e') {
-  return `COALESCE(
-    u.full_name,
-    JSON_UNQUOTE(JSON_EXTRACT(${alias}.profile, '$.display_name')),
-    CONCAT('Employee ', SUBSTRING(${alias}.id, 1, 8))
-  )`;
-}
-
 router.get('/dashboard', async (req, res) => {
   let pool;
   try {
@@ -48,55 +40,17 @@ router.get('/dashboard', async (req, res) => {
        LIMIT 50`
     );
 
-    const nameSql = employeeNameExpr('e');
-    
-    // Performance alerts query - commented out as PerformanceRecord table removed
-    const performanceAlerts = [];
-
-    // Lifecycle events query - commented out as LifecycleEvent table removed  
-    const lifecycleEvents = [];
-
-    // HR decisions query - commented out as HRDecision table removed
-    const hrDecisionsPending = [];
-
-    // ── Employee headcount stats ─────────────────────────────────────────────
-    const [[{ totalEmployees }]] = await pool.query(
-      `SELECT COUNT(*) AS totalEmployees
-       FROM Employee
-       WHERE employment_status = 'active'`
-    );
-
-    const [[{ addedThisMonth }]] = await pool.query(
-      `SELECT COUNT(*) AS addedThisMonth
-       FROM Employee
-       WHERE employment_status = 'active'
-         AND YEAR(created_at)  = YEAR(CURRENT_DATE())
-         AND MONTH(created_at) = MONTH(CURRENT_DATE())`
-    );
-
-    const [[{ removedThisMonth }]] = await pool.query(
-      `SELECT COUNT(*) AS removedThisMonth
-       FROM Employee
-       WHERE employment_status = 'inactive'
-         AND YEAR(updated_at)  = YEAR(CURRENT_DATE())
-         AND MONTH(updated_at) = MONTH(CURRENT_DATE())`
+    const [[{ totalApplicants }]] = await pool.query(
+      `SELECT COUNT(*) AS totalApplicants FROM Applicant`
     );
 
     return res.json({
       activeJobPostings,
       pendingAssessments,
-      performanceAlerts,
-      lifecycleEvents,
-      hrDecisionsPending,
       counts: {
         activeJobPostings: activeJobPostings.length,
         pendingAssessments: pendingAssessments.length,
-        performanceAlerts: performanceAlerts.length,
-        lifecycleEvents: lifecycleEvents.length,
-        hrDecisionsPending: hrDecisionsPending.length,
-        totalEmployees: Number(totalEmployees),
-        addedThisMonth: Number(addedThisMonth),
-        removedThisMonth: Number(removedThisMonth),
+        totalApplicants: Number(totalApplicants),
       },
     });
   } catch (err) {
@@ -190,56 +144,6 @@ router.get('/messages', async (req, res) => {
     console.error('[/hr/messages] Error:', err.message);
     console.error('[/hr/messages] Full error:', err);
     return res.status(500).json({ error: 'Could not load messages' });
-  }
-});
-
-router.get('/lifecycle/overview', async (req, res) => {
-  let pool;
-  try {
-    pool = getPool();
-  } catch {
-    return res.status(503).json({ error: 'Database is not available' });
-  }
-
-  try {
-    // Get audit log entries from system activity tracking
-    // This pulls from UserNotification and system logs
-    const [auditLog] = await pool.query(
-      `SELECT
-         un.id,
-         un.title AS action,
-         un.entity_type,
-         un.entity_id,
-         un.body AS notes,
-         un.created_at,
-         un.metadata
-       FROM UserNotification un
-       WHERE un.category IN ('recruitment', 'hr_action', 'system')
-         AND un.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)
-       ORDER BY un.created_at DESC
-       LIMIT 500`
-    );
-
-    // If no notifications, return empty audit log
-    if (!auditLog.length) {
-      return res.json({ auditLog: [] });
-    }
-
-    // Format audit log entries
-    const formattedLog = auditLog.map((entry) => ({
-      id: entry.id,
-      action: entry.action || 'system_action',
-      entity_type: entry.entity_type || 'system',
-      entity_id: entry.entity_id || 'n/a',
-      notes: entry.notes,
-      created_at: entry.created_at,
-      metadata: entry.metadata ? JSON.parse(entry.metadata) : {}
-    }));
-
-    return res.json({ auditLog: formattedLog });
-  } catch (err) {
-    console.error('[/hr/lifecycle/overview] Error:', err.message);
-    return res.status(500).json({ error: 'Could not load audit log' });
   }
 });
 

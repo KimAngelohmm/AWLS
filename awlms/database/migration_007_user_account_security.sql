@@ -1,7 +1,7 @@
 -- ---------------------------------------------------------------------------
 -- Migration 007 — User account security fields
 -- Adds email verification, password reset, brute-force lockout, and
--- account lifecycle columns to the existing `users` table.
+-- account status columns to the existing `users` table.
 --
 -- Safe to run on any database created from schema.sql (migrations 001–006).
 -- Each statement uses ADD COLUMN IF NOT EXISTS so re-running is harmless.
@@ -9,7 +9,7 @@
 
 USE awlms;
 
--- ── Account lifecycle ────────────────────────────────────────────────────────
+-- ── Account status ───────────────────────────────────────────────────────────
 
 ALTER TABLE `users`
   ADD COLUMN IF NOT EXISTS `is_active`     TINYINT(1)   NOT NULL DEFAULT 1

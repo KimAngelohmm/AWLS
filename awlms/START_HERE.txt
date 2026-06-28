@@ -62,7 +62,7 @@
   ✅ Webcam monitoring & cheating detection
   ✅ Email notifications
   ✅ HR dashboard
-  ✅ Employee lifecycle tracking
+  ✅ Employee records and account tracking
   ✅ Performance evaluations
   ✅ Document management
   ✅ All features working

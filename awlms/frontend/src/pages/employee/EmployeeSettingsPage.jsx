@@ -209,17 +209,6 @@ export default function EmployeeSettingsPage() {
               <p className="sett-info-label">Start date</p>
               <p className="sett-info-value">{formatDate(emp.hire_date)}</p>
             </div>
-            {emp.lifecycle_event_type && (
-              <div className="sett-info-item">
-                <p className="sett-info-label">
-                  {emp.lifecycle_event_type === 'promotion' ? 'Last promotion' :
-                   emp.lifecycle_event_type === 'termination' ? 'Termination date' :
-                   emp.lifecycle_event_type === 'resignation' ? 'Resignation date' :
-                   'Lifecycle event'}
-                </p>
-                <p className="sett-info-value">{formatDate(emp.lifecycle_event_date)}</p>
-              </div>
-            )}
           </div>
         </section>
       )}

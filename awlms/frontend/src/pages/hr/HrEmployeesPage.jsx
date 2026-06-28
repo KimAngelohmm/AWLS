@@ -13,9 +13,6 @@ function formatDate(value) {
 function StatusBadge({ status }) {
   const map = {
     active:    { label: 'Active',    cls: 'hdb-badge--teal' },
-    resigned:  { label: 'Resigned',  cls: 'hdb-badge--red' },
-    terminated:{ label: 'Terminated',cls: 'hdb-badge--red' },
-    promoted:  { label: 'Promoted',  cls: 'hdb-badge--blue' },
     inactive:  { label: 'Inactive',  cls: 'hdb-badge--gray' },
   };
   const s = map[status?.toLowerCase()] ?? { label: status ?? 'Unknown', cls: 'hdb-badge--gray' };
@@ -443,8 +440,6 @@ function ManageAccountModal({ account, onClose, onUpdated }) {
                 }}>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-                <option value="resigned">Resigned</option>
-                <option value="terminated">Terminated</option>
               </select>
             </div>
 
@@ -678,38 +673,6 @@ export default function HrEmployeesPage() {
                   }}
                 >
                   Inactive
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setFilterStatus('resigned')}
-                  style={{
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '0.25rem',
-                    border: 'none',
-                    backgroundColor: filterStatus === 'resigned' ? '#22D3EE' : '#3d4557',
-                    color: filterStatus === 'resigned' ? '#111827' : '#ffffff',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: '500',
-                  }}
-                >
-                  Resigned
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setFilterStatus('terminated')}
-                  style={{
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '0.25rem',
-                    border: 'none',
-                    backgroundColor: filterStatus === 'terminated' ? '#22D3EE' : '#3d4557',
-                    color: filterStatus === 'terminated' ? '#111827' : '#ffffff',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: '500',
-                  }}
-                >
-                  Terminated
                 </button>
               </div>
             </div>

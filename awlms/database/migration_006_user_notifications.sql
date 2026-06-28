@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS `UserNotification` (
   `category`    ENUM(
     'hr_assessment_pending',
     'hr_performance_issue',
-    'hr_lifecycle',
     'mgr_team_performance',
     'mgr_recommendation_status'
   ) NOT NULL,

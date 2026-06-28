@@ -12,9 +12,6 @@ function formatDate(value) {
 function StatusBadge({ status }) {
   const map = {
     active:    { label: 'Active',    cls: 'hdb-badge--teal' },
-    resigned:  { label: 'Resigned',  cls: 'hdb-badge--red' },
-    terminated:{ label: 'Terminated',cls: 'hdb-badge--red' },
-    promoted:  { label: 'Promoted',  cls: 'hdb-badge--blue' },
     inactive:  { label: 'Inactive',  cls: 'hdb-badge--gray' },
   };
   const s = map[status?.toLowerCase()] ?? { label: status ?? 'Unknown', cls: 'hdb-badge--gray' };
@@ -391,8 +388,6 @@ export default function ManagerEmployeesPage() {
           >
             <option value="all">All statuses</option>
             <option value="active">Active</option>
-            <option value="resigned">Resigned</option>
-            <option value="terminated">Terminated</option>
             <option value="inactive">Inactive</option>
           </select>
         </div>

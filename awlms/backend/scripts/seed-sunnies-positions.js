@@ -262,7 +262,10 @@ async function main() {
     const [hrRows] = await conn.query(
       "SELECT id FROM users WHERE email = 'hr@sunniesstudios.com' LIMIT 1"
     );
-    const hrId = hrRows[0]?.id || uuidv4();
+    const hrId = hrRows[0]?.id || null;
+    if (!hrId) {
+      console.warn('HR seed user not found; positions will be created without created_by_user_id.');
+    }
 
     // Insert positions
     let inserted = 0;

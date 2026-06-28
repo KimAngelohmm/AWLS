@@ -8,11 +8,9 @@ const authRouter = require('./routes/auth');
 const portalRouter = require('./routes/portal');
 const hrRouter = require('./routes/hr');
 const hrEmployeeAccountsRouter = require('./routes/hrEmployeeAccounts');
-const employeeRouter = require('./routes/employee');
 const recruitmentPublicRouter = require('./routes/recruitmentPublic');
+const documentsRouter = require('./routes/documents');
 const hrRecruitmentRouter = require('./routes/hrRecruitment');
-const hrMonitoringRouter = require('./routes/hrMonitoring');
-const managerMonitoringRouter = require('./routes/managerMonitoring');
 const managerNotificationsRouter = require('./routes/managerNotifications');
 const aiChatRouter = require('./routes/aiChat');
 const publicApiRouter = require('./routes/publicApi');
@@ -52,6 +50,24 @@ const autoCheckDatabase = async () => {
       `);
       console.log('[startup] ✓ Interview columns created');
     }
+
+    const [accessCols] = await conn.query(`
+      SELECT COLUMN_NAME FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Applicant' AND COLUMN_NAME = 'document_access_token' LIMIT 1
+    `);
+
+    if (accessCols.length === 0) {
+      console.log('[startup] Creating document_access_token column...');
+      await conn.query(`
+        ALTER TABLE \`Applicant\`
+          ADD COLUMN IF NOT EXISTS \`document_access_token\` VARCHAR(96) NULL AFTER \`about_yourself\`
+      `);
+      await conn.query(`
+        ALTER TABLE \`Applicant\`
+          ADD UNIQUE INDEX IF NOT EXISTS \`uk_applicant_document_access_token\` (\`document_access_token\`)
+      `);
+      console.log('[startup] ✓ Document access token column created');
+    }
     
     await conn.end();
   } catch (err) {
@@ -77,7 +93,7 @@ app.use(express.json());
 
 app.get('/api', (req, res) => {
   res.json({
-    name: 'AWLMS API',
+    name: 'AI Recruitment & Interview API',
     version: '1.0.0',
   });
 });
@@ -89,17 +105,14 @@ app.use('/api/public', publicApiRouter);
 
 /** Mount specific HR routers before `/api/hr` so they are not shadowed by the generic HR router. */
 app.use('/api/hr/recruitment', authenticateToken, requireRole('hr'), hrRecruitmentRouter);
-app.use('/api/hr/monitoring', authenticateToken, requireRole('hr'), hrMonitoringRouter);
 // Employee account creation and directory — accessible to both HR personnel and Managers
 app.use('/api/hr/employees', authenticateToken, requireRole('hr', 'manager'), hrEmployeeAccountsRouter);
 app.use('/api/hr', hrRouter);
 
-/** Manager: mount `/monitoring` before `/api/manager` notifications base. */
-app.use('/api/manager/monitoring', authenticateToken, requireRole('manager'), managerMonitoringRouter);
 app.use('/api/manager', managerNotificationsRouter);
 
-app.use('/api/employee', employeeRouter);
 app.use('/api/recruitment', recruitmentPublicRouter);
+app.use('/api/recruitment', documentsRouter);
 app.use('/api/ai/chat', aiChatRouter);
 
 app.use((err, req, res, next) => {
@@ -108,7 +121,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-  console.log(`AWLMS backend listening on http://localhost:${port}`);
+  console.log(`[startup] AI Recruitment API listening on http://localhost:${port}`);
 });
 
 }).catch((err) => {

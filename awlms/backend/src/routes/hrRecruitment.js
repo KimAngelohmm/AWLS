@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { getPool } = require('../config/db');
 const { sendInterviewInvitation, sendInterviewLink } = require('../services/emailService');
+const { getRequiredDocumentTypes, getFileStream, DOCUMENT_TYPES } = require('../services/documentService');
 
 const router = express.Router();
 
@@ -225,96 +226,14 @@ router.delete('/job-positions/:id', async (req, res) => {
     return res.status(400).json({ error: 'Job position id is required' });
   }
 
-  const conn = await pool.getConnection();
   try {
-    const [jobs] = await conn.query(
-      `SELECT id, title FROM JobPosition WHERE id = ? LIMIT 1`,
-      [id]
-    );
-    if (!jobs.length) {
-      return res.status(404).json({ error: 'Job position not found' });
-    }
-
-    const [[empCount]] = await conn.query(
-      `SELECT COUNT(*) AS cnt FROM Employee WHERE job_position_id = ?`,
-      [id]
-    );
-    const employeesOnRole = Number(empCount.cnt);
-
-    let reassignedTo = null;
-    await conn.beginTransaction();
-
-    if (employeesOnRole > 0) {
-      const [fallbackJobs] = await conn.query(
-        `SELECT id, title FROM JobPosition
-         WHERE id <> ? AND title NOT IN ('Unassigned role')
-         ORDER BY updated_at DESC LIMIT 1`,
-        [id]
-      );
-
-      if (fallbackJobs.length) {
-        reassignedTo = fallbackJobs[0];
-      } else if (jobs[0].title === 'Unassigned role') {
-        const [existingGeneral] = await conn.query(
-          `SELECT id, title FROM JobPosition WHERE title = 'General Employee' LIMIT 1`
-        );
-        if (existingGeneral.length) {
-          reassignedTo = existingGeneral[0];
-        } else {
-          const generalId = crypto.randomUUID();
-          await conn.query(
-            `INSERT INTO JobPosition (
-               id, title, competency_requirements, interview_criteria, status,
-               number_of_openings, created_by_user_id, description
-             ) VALUES (?, 'General Employee', '{}', '{}', 'closed', 1, ?, NULL)`,
-            [generalId, req.user.id]
-          );
-          reassignedTo = { id: generalId, title: 'General Employee' };
-        }
-      } else {
-        await conn.rollback();
-        return res.status(409).json({
-          error: `${employeesOnRole} employee(s) use this role. Create another job listing first, then delete this one (employees will move to the other listing).`,
-        });
-      }
-
-      await conn.query(`UPDATE Employee SET job_position_id = ? WHERE job_position_id = ?`, [
-        reassignedTo.id,
-        id,
-      ]);
-    }
-
-    const [result] = await conn.query(`DELETE FROM JobPosition WHERE id = ?`, [id]);
-    if (!result.affectedRows) {
-      await conn.rollback();
-      return res.status(404).json({ error: 'Job position not found' });
-    }
-
-    await conn.commit();
-
-    return res.json({
-      ok: true,
-      deletedId: id,
-      title: jobs[0].title,
-      reassignedEmployees: employeesOnRole,
-      reassignedToJobId: reassignedTo?.id ?? null,
-      reassignedToJobTitle: reassignedTo?.title ?? null,
-    });
+    await pool.query(`DELETE FROM JobPosition WHERE id = ?`, [id]);
+    return res.json({ ok: true });
   } catch (err) {
-    try {
-      await conn.rollback();
-    } catch {
-      /* ignore */
+    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({ error: 'Cannot delete: position has active applicants.' });
     }
-    console.error(err);
-    if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.errno === 1451) {
-      return res.status(409).json({
-        error: 'Cannot delete this job: it is still referenced by other records.',
-      });
-    }
-    return res.status(500).json({ error: 'Could not delete job position' });
-  } finally {
-    conn.release();
+    throw err;
   }
 });
 
@@ -326,18 +245,244 @@ router.get('/job-positions/:id/applicants', async (req, res) => {
     return res.status(503).json({ error: 'Database is not available' });
   }
   try {
+    const requiredDocumentTypes = getRequiredDocumentTypes();
+    const requiredPlaceholders = requiredDocumentTypes.map(() => '?').join(', ');
     const [rows] = await pool.query(
-      `SELECT id, full_name, email, phone, about_yourself, hiring_decision,
-              interview_status, assessment_summary, ai_recommendation, created_at, updated_at
-       FROM Applicant
-       WHERE job_position_id = ?
-       ORDER BY created_at DESC`,
-      [req.params.id]
+      `SELECT a.id, a.full_name, a.email, a.phone, a.about_yourself, a.hiring_decision,
+              a.interview_status, a.assessment_summary, a.ai_recommendation, a.created_at, a.updated_at,
+              jp.title AS job_title,
+              COUNT(DISTINCT ad.document_type) AS document_count,
+              COUNT(DISTINCT CASE WHEN ad.document_type IN (${requiredPlaceholders}) THEN ad.document_type ELSE NULL END) AS required_document_count
+       FROM Applicant a
+       LEFT JOIN ApplicantDocuments ad ON ad.applicant_id = a.id
+       INNER JOIN JobPosition jp ON jp.id = a.job_position_id
+       WHERE a.job_position_id = ?
+       GROUP BY a.id
+       ORDER BY a.created_at DESC`,
+      [...requiredDocumentTypes, req.params.id]
     );
-    return res.json({ applicants: rows });
+
+    const applicants = rows.map((row) => {
+      const requiredDocumentCount = Number(row.required_document_count || 0);
+      const missingRequiredDocuments = Math.max(0, requiredDocumentTypes.length - requiredDocumentCount);
+      return {
+        ...row,
+        document_count: Number(row.document_count || 0),
+        required_document_count: requiredDocumentCount,
+        missing_required_documents: missingRequiredDocuments,
+      };
+    });
+
+    return res.json({ applicants });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Could not load applicants' });
+  }
+});
+
+router.get('/applicants/documents', async (req, res) => {
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    const statusFilter = req.query.status ? String(req.query.status).trim() : null;
+    const params = [];
+    let filterClause = '';
+
+    if (statusFilter) {
+      filterClause = 'WHERE ad.verification_status = ?';
+      params.push(statusFilter);
+    }
+
+    const [rows] = await pool.query(
+      `SELECT ad.id AS document_id, ad.applicant_id, ad.document_type, ad.original_filename, ad.mime_type,
+              ad.file_size, ad.upload_timestamp, ad.verification_status, ad.verified_by_user_id,
+              ad.verified_at, ad.verification_comments, ad.updated_at,
+              a.full_name AS applicant_name, a.email AS applicant_email,
+              jp.title AS job_title
+       FROM ApplicantDocuments ad
+       INNER JOIN Applicant a ON a.id = ad.applicant_id
+       LEFT JOIN JobPosition jp ON jp.id = a.job_position_id
+       ${filterClause}
+       ORDER BY ad.upload_timestamp DESC`,
+      params
+    );
+
+    const documents = rows.map((row) => ({
+      ...row,
+      document_type_label: DOCUMENT_TYPES[row.document_type]?.name || row.document_type,
+    }));
+
+    return res.json({ documents });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not load applicant documents' });
+  }
+});
+
+router.get('/applicants/:id/documents', async (req, res) => {
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT ad.id AS document_id, ad.applicant_id, ad.document_type, ad.original_filename, ad.mime_type,
+              ad.file_size, ad.upload_timestamp, ad.verification_status, ad.verified_by_user_id,
+              ad.verified_at, ad.verification_comments, ad.updated_at,
+              a.full_name AS applicant_name, a.email AS applicant_email,
+              jp.title AS job_title
+       FROM ApplicantDocuments ad
+       INNER JOIN Applicant a ON a.id = ad.applicant_id
+       LEFT JOIN JobPosition jp ON jp.id = a.job_position_id
+       WHERE a.id = ?
+       ORDER BY ad.upload_timestamp DESC`,
+      [req.params.id]
+    );
+
+    const documents = rows.map((row) => ({
+      ...row,
+      document_type_label: DOCUMENT_TYPES[row.document_type]?.name || row.document_type,
+    }));
+
+    return res.json({ documents });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not load applicant documents' });
+  }
+});
+
+router.post('/applicants/:id/documents/:documentId/verify', async (req, res) => {
+  const applicantId = req.params.id;
+  const documentId = req.params.documentId;
+  const comments = req.body?.comments ? String(req.body.comments).trim() : null;
+
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    const [documents] = await pool.query(
+      `SELECT id, applicant_id FROM ApplicantDocuments WHERE id = ? LIMIT 1`,
+      [documentId]
+    );
+    if (!documents.length) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const doc = documents[0];
+    if (doc.applicant_id !== applicantId) {
+      return res.status(404).json({ error: 'Document not found for this applicant' });
+    }
+
+    const [result] = await pool.query(
+      `UPDATE ApplicantDocuments
+       SET verification_status = 'verified', verified_by_user_id = ?, verified_at = CURRENT_TIMESTAMP,
+           verification_comments = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [req.user.id, comments, documentId]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(500).json({ error: 'Could not verify document' });
+    }
+
+    return res.json({ ok: true, document_id: documentId, verification_status: 'verified', verified_at: new Date().toISOString() });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not verify document' });
+  }
+});
+
+router.post('/applicants/:id/documents/:documentId/reject', async (req, res) => {
+  const applicantId = req.params.id;
+  const documentId = req.params.documentId;
+  const comments = req.body?.comments ? String(req.body.comments).trim() : null;
+
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    const [documents] = await pool.query(
+      `SELECT id, applicant_id FROM ApplicantDocuments WHERE id = ? LIMIT 1`,
+      [documentId]
+    );
+    if (!documents.length) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const doc = documents[0];
+    if (doc.applicant_id !== applicantId) {
+      return res.status(404).json({ error: 'Document not found for this applicant' });
+    }
+
+    const [result] = await pool.query(
+      `UPDATE ApplicantDocuments
+       SET verification_status = 'rejected', verified_by_user_id = ?, verified_at = CURRENT_TIMESTAMP,
+           verification_comments = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [req.user.id, comments, documentId]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(500).json({ error: 'Could not reject document' });
+    }
+
+    return res.json({ ok: true, document_id: documentId, verification_status: 'rejected', verified_at: new Date().toISOString() });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not reject document' });
+  }
+});
+
+router.get('/documents/:documentId/download', async (req, res) => {
+  const { documentId } = req.params;
+
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    return res.status(503).json({ error: 'Database is not available' });
+  }
+
+  try {
+    const [documents] = await pool.query(
+      `SELECT original_filename, mime_type, stored_filename
+       FROM ApplicantDocuments
+       WHERE id = ? LIMIT 1`,
+      [documentId]
+    );
+
+    if (!documents.length) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const doc = documents[0];
+    try {
+      const fileStream = getFileStream(doc.stored_filename, doc.applicant_id);
+      res.setHeader('Content-Type', doc.mime_type);
+      res.setHeader('Content-Disposition', `attachment; filename="${doc.original_filename}"`);
+      fileStream.pipe(res);
+    } catch (err) {
+      return res.status(404).json({ error: 'File not found on server' });
+    }
+  } catch (err) {
+    console.error('HR document download error:', err);
+    return res.status(500).json({ error: 'Failed to download document' });
   }
 });
 

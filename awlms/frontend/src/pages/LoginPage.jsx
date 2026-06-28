@@ -70,17 +70,17 @@ export default function LoginPage() {
         {/* Hero content */}
         <div className="signin-hero">
           <div className="signin-hero-badge">
-            <span>ENTERPRISE HR PLATFORM</span>
+            <span>AI RECRUITMENT PLATFORM</span>
           </div>
           
           <h1 className="signin-hero-title">
-            Manage your<br />
-            workforce with<br />
-            <span className="signin-hero-accent">intelligent AI</span>
+            Find the right talent<br />
+            with <span className="signin-hero-accent">AI-powered</span><br />
+            interviews
           </h1>
           
           <p className="signin-hero-desc">
-            One unified system for applicant screening, real-time performance monitoring, and closed-loop HR lifecycle management.
+            End-to-end recruitment — from job posting to AI interview, resume screening, and hiring decision.
           </p>
         </div>
 
@@ -93,13 +93,13 @@ export default function LoginPage() {
           </li>
           <li className="signin-feature">
             <div className="signin-feature-icon" />
-            <span className="signin-feature-label">Live Monitoring</span>
-            <span className="signin-feature-desc">— real-time dashboards</span>
+            <span className="signin-feature-label">Resume Screening</span>
+            <span className="signin-feature-desc">— AI-scored applicants</span>
           </li>
           <li className="signin-feature">
             <div className="signin-feature-icon" />
-            <span className="signin-feature-label">Closed-Loop Lifecycle</span>
-            <span className="signin-feature-desc">— auto-reopen roles</span>
+            <span className="signin-feature-label">Applicant Tracking</span>
+            <span className="signin-feature-desc">— full recruitment pipeline</span>
           </li>
         </ul>
       </div>

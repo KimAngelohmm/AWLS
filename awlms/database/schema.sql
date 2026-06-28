@@ -1,5 +1,5 @@
 -- ============================================================
--- AWLMS — AI-Powered Workforce Recruitment & Monitoring System
+-- AWLMS — AI-Powered Recruitment & Interview Management System
 -- Authoritative MySQL Schema (MySQL 8.0+ / XAMPP)
 -- Database: awlms
 -- Charset:  utf8mb4 / utf8mb4_unicode_ci
@@ -7,8 +7,7 @@
 -- FEATURES:
 --   JobPosition (open) → Applicant applies → AI Interview
 --   → HR reviews AI assessment → approved → Employee created
---   Employees tracked via Monitoring (webcam, performance metrics)
---   HR Dashboard: Recruitment module, Monitoring module, Reports
+--   HR Dashboard: Recruitment module, Applicant interviews, Hiring decisions
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS awlms
@@ -85,8 +84,7 @@ CREATE TABLE `users` (
 -- ============================================================
 -- 3. JOB POSITIONS
 --    HR creates open roles. AI interview rubric and competency
---    requirements live here. Closed-loop: when an employee
---    leaves, the system auto-clones this row as a new vacancy.
+--    requirements live here. Roles may be reposted automatically as needed.
 -- ============================================================
 CREATE TABLE `JobPosition` (
   `id`                       CHAR(36)     NOT NULL,
@@ -106,9 +104,6 @@ CREATE TABLE `JobPosition` (
   -- Scoring rubric passed to the AI interviewer at runtime
   `interview_criteria`       JSON         NOT NULL DEFAULT (JSON_OBJECT())
     COMMENT 'Scoring rubric and question themes for the AI interview',
-  -- Performance thresholds used by the monitoring module
-  `performance_thresholds`   JSON         NOT NULL DEFAULT (JSON_OBJECT())
-    COMMENT 'focus_score_min, activity_index_min, etc. evaluated by performanceMetrics service',
   `status`                   ENUM('draft','open','filled','closed') NOT NULL DEFAULT 'draft',
   `filled_at`                DATETIME     NULL,
   `created_at`               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,7 +117,7 @@ CREATE TABLE `JobPosition` (
   CONSTRAINT `fk_jobposition_created_by`
     FOREIGN KEY (`created_by_user_id`)  REFERENCES `users`       (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Open roles; drives AI interview rubric and closed-loop reposting';
+  COMMENT='Open roles; drives AI interview rubric and reposting as needed';
 
 -- ============================================================
 -- 4. APPLICANTS
@@ -143,6 +138,8 @@ CREATE TABLE `Applicant` (
     COMMENT 'Cover letter, resume URL, custom fields submitted at apply time',
   `about_yourself`      TEXT         NULL
     COMMENT 'Short self-introduction from public apply form',
+  `document_access_token` VARCHAR(96)  NULL
+    COMMENT 'Unique token for applicant document management and secure post-apply access',
   -- AI interview state
   `interview_token`     VARCHAR(96)  NULL
     COMMENT 'Unique token sent to applicant — authenticates the public interview session',
@@ -166,6 +163,7 @@ CREATE TABLE `Applicant` (
   `updated_at`          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_applicant_position_email`    (`job_position_id`, `email`),
+  UNIQUE KEY `uk_applicant_document_access_token` (`document_access_token`),
   UNIQUE KEY `uk_applicant_interview_token`   (`interview_token`),
   KEY        `idx_applicant_hiring_decision`  (`hiring_decision`),
   KEY        `idx_applicant_interview_status` (`interview_status`),
@@ -178,11 +176,45 @@ CREATE TABLE `Applicant` (
   COMMENT='One row per application; holds full AI interview state and HR decision';
 
 -- ============================================================
--- 5. EMPLOYEES
+-- 6. APPLICANT DOCUMENTS
+--    Uploaded applicant file metadata stored separately from binary files
+-- ============================================================
+CREATE TABLE `ApplicantDocuments` (
+  `id`                 CHAR(36)      NOT NULL COMMENT 'Unique document ID (UUID)',
+  `applicant_id`       CHAR(36)      NOT NULL COMMENT 'FK to Applicant; deleted when applicant is deleted',
+  `document_type`      VARCHAR(50)   NOT NULL COMMENT 'Type: resume, government_id, photo, tor, diploma, nbi_clearance, certificate, portfolio, cover_letter, other',
+  `original_filename`  VARCHAR(255)  NOT NULL COMMENT 'Original filename uploaded by applicant',
+  `stored_filename`    VARCHAR(255)  NOT NULL COMMENT 'Filename on disk (sanitized, UUID-based)',
+  `mime_type`          VARCHAR(100)  NOT NULL COMMENT 'MIME type: application/pdf, image/png, etc.',
+  `file_size`          BIGINT UNSIGNED NOT NULL COMMENT 'File size in bytes',
+  `upload_timestamp`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When the file was uploaded',
+  `verification_status` ENUM('uploaded','verified','rejected') NOT NULL DEFAULT 'uploaded' COMMENT 'Current verification status of the document',
+  `verified_by_user_id` CHAR(36)      NULL COMMENT 'HR user who verified or rejected the document',
+  `verified_at`        DATETIME      NULL COMMENT 'When the document was verified or rejected',
+  `verification_comments` TEXT        NULL COMMENT 'Optional notes from HR verification',
+  `created_at`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_documents_applicant_id`    (`applicant_id`),
+  KEY `idx_documents_document_type`   (`document_type`),
+  KEY `idx_documents_upload_time`     (`upload_timestamp`),
+  KEY `idx_documents_verification_status` (`verification_status`),
+  KEY `idx_documents_verified_by`     (`verified_by_user_id`),
+  CONSTRAINT `fk_documents_applicant_id`
+    FOREIGN KEY (`applicant_id`) REFERENCES `Applicant` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_documents_verified_by`
+    FOREIGN KEY (`verified_by_user_id`) REFERENCES `users` (`id`)
+    ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Applicant uploaded documents: resumes, IDs, photos, certificates, etc.';
+
+-- ============================================================
+-- 7. EMPLOYEES
 --    Created by HR after Applicant.hiring_decision = approved.
 --    Linked to a users row (login account) and the Applicant
---    row it originated from. employment_status drives the
---    entire lifecycle: active → on_leave → resigned/terminated.
+--    row it originated from. Represents hired employee data for the
+--    recruitment pipeline.
 -- ============================================================
 CREATE TABLE `Employee` (
   `id`                CHAR(36)    NOT NULL,
@@ -216,7 +248,7 @@ CREATE TABLE `Employee` (
   CONSTRAINT `fk_employee_dept`
     FOREIGN KEY (`department_id`)   REFERENCES `departments` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Active workforce; one row per hired employee';
+  COMMENT='Hired employees; one row per created employee record';
 
 -- ============================================================
 -- SAMPLE DATA
@@ -268,22 +300,20 @@ VALUES
 -- Job Positions
 INSERT INTO `JobPosition`
   (`id`, `title`, `description`, `department_id`, `created_by_user_id`,
-   `competency_requirements`, `interview_criteria`, `performance_thresholds`, `status`)
+   `competency_requirements`, `interview_criteria`, `status`)
 VALUES
   ('job-sdev-0001-0000-000000000001',
    'Senior Developer', 'Lead backend and frontend development initiatives.',
    'dept-eng-0001-0000-000000000001', 'user-hr01-0000-0000-000000000001',
    '{"skills":["Node.js","React","MySQL"],"experience_years":3}',
    '{"themes":["technical depth","system design","teamwork"],"min_turns":5}',
-   '{"focus_score_min":60,"activity_index_min":0.5}',
    'open'),
 
   ('job-dana-0001-0000-000000000002',
-   'Data Analyst', 'Analyse workforce and business data to support decisions.',
+   'Data Analyst', 'Analyse business and product data to support decisions.',
    'dept-ana-0001-0000-000000000002', 'user-hr01-0000-0000-000000000001',
    '{"skills":["SQL","Python","Tableau"],"experience_years":2}',
    '{"themes":["analytical thinking","data storytelling","attention to detail"],"min_turns":5}',
-   '{"focus_score_min":55,"activity_index_min":0.45}',
    'open'),
 
   ('job-uxds-0001-0000-000000000003',
@@ -291,7 +321,6 @@ VALUES
    'dept-prd-0001-0000-000000000003', 'user-hr01-0000-0000-000000000001',
    '{"skills":["Figma","user research","prototyping"],"experience_years":2}',
    '{"themes":["design process","empathy","portfolio review"],"min_turns":5}',
-   '{"focus_score_min":50,"activity_index_min":0.4}',
    'open');
 
 -- Employees  (linked to the users above)
@@ -323,46 +352,5 @@ VALUES
    'dept-prd-0001-0000-000000000003',
    'EMP-0004', '2023-06-20', 'active');
 
--- Sample performance records
-INSERT INTO `PerformanceRecord`
-  (`id`, `employee_id`, `recorded_at`, `metrics`, `source`)
-VALUES
-  ('perf-0001-0000-0000-000000000001',
-   'emp-0002-0000-0000-000000000002',
-   NOW(),
-   '{"focus_score":94,"activity_index":0.91,"productive_minutes":420,"tasks_completed":12,"alert":false,"severity":"ok"}',
-   'aggregated'),
-
-  ('perf-0002-0000-0000-000000000002',
-   'emp-0001-0000-0000-000000000001',
-   NOW(),
-   '{"focus_score":38,"activity_index":0.28,"productive_minutes":90,"tasks_completed":2,"alert":true,"severity":"high"}',
-   'aggregated'),
-
-  ('perf-0003-0000-0000-000000000003',
-   'emp-0003-0000-0000-000000000003',
-   NOW(),
-   '{"focus_score":72,"activity_index":0.65,"productive_minutes":310,"tasks_completed":7,"alert":false,"severity":"ok"}',
-   'aggregated');
-
--- Sample performance alert (for the low-performing employee above)
-INSERT INTO `PerformanceStaffAlert`
-  (`id`, `employee_id`, `performance_record_id`, `severity`, `title`, `body`, `audience`)
-VALUES
-  ('psa-0001-0000-0000-000000000001',
-   'emp-0001-0000-0000-000000000001',
-   'perf-0002-0000-0000-000000000002',
-   'high',
-   'Critical performance drop — Santos, Francis',
-   'Focus score 38 (min 60) and activity index 0.28 (min 0.50) both below role thresholds.',
-   'both');
-
--- Sample HR notification for an employee
-INSERT INTO `HRNotification`
-  (`id`, `employee_id`, `title`, `body`, `category`)
-VALUES
-  ('hrn-0001-0000-0000-000000000001',
-   'emp-0002-0000-0000-000000000002',
-   'Performance recognition — Q2 2025',
-   'Dear Mansilla, Anya,\n\nYour Q2 performance metrics have been reviewed and you have been recognised as a high performer. Well done.\n\nSincerely,\nHuman Resources',
-   'general');
+-- Sample legacy demo data removed.
+-- The schema now focuses on recruitment, applicant interviews, and hiring decisions.

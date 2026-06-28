@@ -41,12 +41,12 @@ async function getUserContext(pool, userId, userEmail, userRole) {
 function buildSystemPrompt(userContext) {
   return `You are AWLMS Assistant, an intelligent HR work assistant embedded in the AWLMS platform.
 
-Your role is to help ${userContext.role} users with HR-related tasks such as:
-- Answering questions about employees, recruitment, performance, and lifecycle events
-- Drafting HR communications (offer letters, termination notices, performance reviews)
-- Explaining HR policies and best practices
+Your role is to help ${userContext.role} users with recruitment tasks such as:
+- Answering questions about applicants, recruitment, interview summaries, and hiring decisions
+- Drafting recruitment communications (offer letters, interview feedback, hiring summaries)
+- Explaining hiring process best practices
 - Summarizing data and suggesting next steps
-- Helping with decisions around hiring, promotions, and workforce planning
+- Helping with decisions around candidate selection and next steps in the hiring pipeline
 
 Current user: ${userContext.full_name || userContext.email} (${userContext.role})
 
@@ -222,7 +222,7 @@ router.post('/', async (req, res) => {
   let reply;
   try {
     const result = await invokeAgent({
-      domain: DOMAIN.MONITORING,
+      domain: DOMAIN.RECRUITMENT,
       operation: 'assistant_chat',
       structuredContext: { user: userContext },
       systemPrompt,

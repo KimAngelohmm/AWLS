@@ -71,7 +71,6 @@ async function buildInterviewStructuredContext(job, pool) {
     },
     competency_requirements: normalizeJsonField(job.competency_requirements),
     interview_criteria_rubric: normalizeJsonField(job.interview_criteria),
-    performance_expectations_for_role: normalizeJsonField(job.performance_thresholds),
     questionnaire_questions: questionnaire.length > 0 
       ? questionnaire.map(q => `${q.question_number}. ${q.question_text}`)
       : null,

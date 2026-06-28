@@ -1,17 +1,21 @@
 import { NavLink, Outlet, useMatch, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { EmployeeWorkspaceProvider, useEmployeeWorkspace } from '../contexts/EmployeeWorkspaceContext.jsx';
+
 import AiChatBubble from '../components/AiChatBubble.jsx';
 
 const nav = [
   { section: 'WORKSPACE', items: [
     { to: '/employee', label: 'Overview', end: true },
-    { to: '/employee/performance', label: 'My Performance' },
     { to: '/employee/notifications', label: 'HR Notifications' },
-    { to: '/employee/resignation', label: 'Resignation Assistant' },
     { to: '/employee/directory', label: 'Personnel Directory' },
   ]},
-  { section: null, items: [{ to: '/employee/ai-chat', label: 'AI Chat' }] },
+  {
+    section: null,
+    items: [
+      { to: '/employee/settings', label: 'Settings' },
+      { to: '/employee/ai-chat', label: 'AI Chat' },
+    ],
+  },
 ];
 
 function getInitials(name = '') {
@@ -27,20 +31,17 @@ function getTodayLabel() {
 function EmployeeHomeAiChat() {
   const isHome = useMatch({ path: '/employee', end: true });
   const isAiChat = useMatch({ path: '/employee/ai-chat', end: true });
-  const { data } = useEmployeeWorkspace();
   if (!isHome || isAiChat) return null;
-
-  const unread = data?.unreadNotificationCount ?? 0;
   return (
     <AiChatBubble
-      notificationCount={unread}
+      notificationCount={0}
       subtitle="AI · Employee Helper"
-      placeholder="Ask about performance, policies, or your workspace…"
+      placeholder="Ask about your application status or interview…"
       suggestions={[
-        'Explain my latest performance review',
-        'How do I start a resignation conversation?',
-        'What do my HR notifications mean?',
+        'What is the status of my application?',
+        'When is my interview scheduled?',
         'Who can I contact for HR support?',
+        'What should I prepare for my interview?',
       ]}
     />
   );
@@ -62,12 +63,12 @@ export default function EmployeeLayout() {
   const initials = getInitials(user?.full_name);
 
   return (
-    <EmployeeWorkspaceProvider>
-      <div className="hr-shell">
+    <>
+    <div className="hr-shell">
         <aside className="hr-sidebar" aria-label="Employee navigation">
           <div className="hr-sidebar-brand">
             <div style={{ width: 32, height: 32, background: '#C4956D', borderRadius: 6, flexShrink: 0 }} />
-            <span className="hr-sidebar-logo">SUNNIES</span>
+            <span className="hr-sidebar-logo">AWLMS</span>
           </div>
 
           <nav className="hr-sidebar-nav" aria-label="Employee modules">
@@ -135,8 +136,8 @@ export default function EmployeeLayout() {
             <Outlet />
           </div>
         </div>
-        <EmployeeHomeAiChat />
       </div>
-    </EmployeeWorkspaceProvider>
+      <EmployeeHomeAiChat />
+    </>
   );
 }

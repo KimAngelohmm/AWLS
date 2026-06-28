@@ -58,10 +58,9 @@ const ENTITY_ICONS = {
       <polyline points="14 2 14 8 20 8"/>
     </svg>
   ),
-  lifecycle_event: (
+  event: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 14.5h-2V13H8.5v-2H11V8.5h2V11H15.5v2H13Z"/>
     </svg>
   ),
   job_position: (
@@ -116,21 +115,14 @@ export default function HrHistoryPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await apiFetch('/api/hr/lifecycle/overview');
-      setAuditLog(res.auditLog ?? []);
-
-      // Load recruitment statistics
-      try {
-        const statsRes = await apiFetch('/api/hr/recruitment/stats');
-        setStats({
-          totalApplicants: statsRes.totalApplicants ?? 0,
-          aiInterviewsCompleted: statsRes.aiInterviewsCompleted ?? 0,
-          hiringDecisions: statsRes.hiringDecisions ?? 0,
-          offersExtended: statsRes.offersExtended ?? 0,
-        });
-      } catch (err) {
-        console.error('Could not load recruitment stats:', err);
-      }
+      setAuditLog([]);
+      const statsRes = await apiFetch('/api/hr/recruitment/stats');
+      setStats({
+        totalApplicants: statsRes.totalApplicants ?? 0,
+        aiInterviewsCompleted: statsRes.aiInterviewsCompleted ?? 0,
+        hiringDecisions: statsRes.hiringDecisions ?? 0,
+        offersExtended: statsRes.offersExtended ?? 0,
+      });
     } catch (err) {
       setError(err.body?.error || err.message || 'Could not load history');
     } finally {
@@ -160,7 +152,7 @@ export default function HrHistoryPage() {
         <div>
           <h1 className="hr-page-title">History</h1>
           <p className="muted">
-            Append-only audit trail of all HR actions, AI decisions, and lifecycle events.
+            Recruitment and interview activity summary for HR workflows.
           </p>
         </div>
         <div className="hr-page-actions">

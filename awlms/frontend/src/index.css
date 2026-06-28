@@ -1257,7 +1257,7 @@ a {
   color: #0fa888;
 }
 
-/* Monitoring dashboard inside dark shell */
+/* Application dashboard styling inside dark shell */
 .hr-shell .dash {
   color: #fff;
 }
@@ -1391,7 +1391,6 @@ a {
 .hdb-panel--alerts     { grid-column: 2; grid-row: 1; }
 .hdb-panel--jobs       { grid-column: 1; grid-row: 2; }
 .hdb-panel--employees  { grid-column: 2; grid-row: 2; }
-.hdb-panel--lifecycle  { grid-column: 1 / -1; grid-row: 3; }
 
 /* Panel header */
 .hdb-panel-head {
@@ -1786,54 +1785,6 @@ a {
   align-items: center;
 }
 
-/* ── Lifecycle decisions ── */
-.hdb-lifecycle-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.hdb-lifecycle-row {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.hdb-lifecycle-row:last-child { border-bottom: none; }
-
-.hdb-lifecycle-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #1a3560;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.hdb-lifecycle-info { flex: 1; min-width: 0; }
-
-.hdb-lifecycle-name {
-  margin: 0;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #fff;
-}
-
-.hdb-lifecycle-sub {
-  margin: 0;
-  font-size: 0.72rem;
-  text-transform: capitalize;
-}
 
 /* AI suggestion bar */
 .hdb-ai-suggest {
@@ -3442,6 +3393,144 @@ a {
   line-height: 1.5;
 }
 
+.supporting-documents-section {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.supporting-documents-section h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.document-upload-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.document-upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.document-upload-remove {
+  background: transparent;
+  border: none;
+  color: #f87171;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.document-upload-remove:hover {
+  text-decoration: underline;
+}
+
+.document-upload-dropzone {
+  position: relative;
+  min-height: 120px;
+  padding: 1rem;
+  border: 2px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.document-upload-dropzone.drag-active {
+  border-color: #0fa888;
+  background: rgba(15, 168, 136, 0.08);
+}
+
+.document-upload-dropzone.has-file {
+  border-color: rgba(15, 168, 136, 0.35);
+}
+
+.document-upload-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.document-upload-content {
+  pointer-events: none;
+}
+
+.document-upload-description {
+  margin: 0;
+  font-weight: 600;
+}
+
+.document-upload-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.document-upload-preview {
+  max-height: 120px;
+  width: auto;
+  border-radius: 12px;
+  object-fit: contain;
+  margin-top: 0.75rem;
+}
+
+.document-upload-status {
+  display: inline-block;
+  margin-left: 0.75rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.document-upload-status--uploading {
+  color: #fbbf24;
+}
+
+.document-upload-status--uploaded {
+  color: #34d399;
+}
+
+.document-upload-status--failed {
+  color: #f87171;
+}
+
+.document-upload-status--ready,
+.document-upload-status--removed {
+  color: #ffffff;
+}
+
+.required-dot {
+  display: inline-block;
+  margin-left: 0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #f87171;
+}
+
+.document-upload-error {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 0.85rem;
+}
+
 .apply-form {
   display: flex;
   flex-direction: column;
@@ -4007,86 +4096,6 @@ a {
 }
 
 
-/* ─── Manager Lifecycle Form ─────────────────────────────────────────────── */
-
-.mgr-page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-}
-
-.mgr-lifecycle-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  align-items: start;
-}
-
-/* Employee and Recommendation selects each take one column */
-.mgr-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.mgr-field span {
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.mgr-field select,
-.mgr-field textarea {
-  background: #1f2937;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #fff;
-  padding: 0.55rem 0.75rem;
-  font-size: 0.9rem;
-  font-family: inherit;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-  appearance: auto;
-}
-
-.mgr-field select:focus,
-.mgr-field textarea:focus {
-  outline: none;
-  border-color: #0fa888;
-}
-
-.mgr-field select:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.mgr-field textarea {
-  resize: vertical;
-  min-height: 90px;
-  line-height: 1.5;
-}
-
-/* Rationale and submit span full width */
-.mgr-field--grow {
-  grid-column: 1 / -1;
-}
-
-.mgr-lifecycle-form > .btn-primary {
-  grid-column: 1 / -1;
-  justify-self: start;
-}
-
-@media (max-width: 640px) {
-  .mgr-lifecycle-form {
-    grid-template-columns: 1fr;
-  }
-}
 
 
 /* ─── Settings page — extended profile fields ────────────────────────────── */
@@ -4425,11 +4434,6 @@ a {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-}
-
-.emp-panel--performance {
-  background: linear-gradient(135deg, rgba(15, 168, 136, 0.08), rgba(15, 168, 136, 0.02));
-  border-color: rgba(15, 168, 136, 0.2);
 }
 
 .emp-panel--notifications {

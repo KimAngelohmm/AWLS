@@ -4,43 +4,38 @@ import { apiFetch } from '../../lib/api.js';
 const PRESETS = {
   hr: {
     welcomeText:
-      "Hi! I'm your AWLMS Assistant. Ask me anything about HR tasks, employees, recruitment, or workforce planning.",
+      "Hi! I'm your AWLMS Assistant. Ask me anything about recruitment, candidate screening, or HR workflow support.",
     subtitle: 'Powered by AI · HR Work Helper',
     placeholder: 'Message AWLMS Assistant…',
     suggestions: [
       'Draft an offer letter for a new hire',
-      'Summarize pending HR decisions',
-      'How do I process a resignation?',
+      'Summarize pending candidate decisions',
       'What positions are currently open?',
-      'Write a performance improvement plan',
-      'Explain our onboarding process',
+      'Help me prepare interview questions for a role',
     ],
   },
   manager: {
     welcomeText:
-      "Hi! I'm your AWLMS Assistant. Ask me about your team, performance alerts, lifecycle recommendations, or day-to-day manager tasks.",
+      "Hi! I'm your AWLMS Assistant. Ask me about your team, hiring priorities, candidate feedback, or manager workflow support.",
     subtitle: 'Powered by AI · Team Work Helper',
     placeholder: 'Message AWLMS Assistant…',
     suggestions: [
-      'Summarize open performance alerts',
-      'How do I submit a lifecycle recommendation?',
-      'Draft feedback for a team member',
-      'What should I review this week?',
-      'Explain a pending recommendation',
-      'Help me prepare for a 1:1',
+      'Summarize candidate feedback for my team',
+      'How do I prepare for a screening interview?',
+      'Draft feedback for a candidate',
+      'What should I prioritize this week?',
+      'Help me understand the hiring pipeline',
     ],
   },
   employee: {
     welcomeText:
-      "Hi! I'm your AWLMS Assistant. Ask me about your performance, HR notifications, policies, or how to use the employee workspace.",
+      "Hi! I'm your AWLMS Assistant. Ask me about HR notifications, the application process, policies, or how to use the employee workspace.",
     subtitle: 'Powered by AI · Employee Helper',
     placeholder: 'Message AWLMS Assistant…',
     suggestions: [
-      'Explain my latest performance review',
       'What do my HR notifications mean?',
-      'How do I use the resignation assistant?',
+      'How do I update my profile?',
       'Who can I contact for HR support?',
-      'Summarize my workspace overview',
       'Help me understand company policies',
     ],
   },

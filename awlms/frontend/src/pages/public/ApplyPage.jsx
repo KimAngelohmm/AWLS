@@ -2,6 +2,19 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { publicApiFetch } from '../../lib/publicApi.js';
 import JobListingMeta from '../../components/JobListingMeta.jsx';
+import DocumentUploadField from '../../components/DocumentUploadField.jsx';
+import { DOCUMENT_FIELDS } from '../../lib/documentTypes.js';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
+
+function validateFile(file) {
+  if (!file) return 'File is required.';
+  if (file.size > MAX_FILE_SIZE) return 'File size must be 10 MB or less.';
+  const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) return 'Accepted formats: PDF, DOC, DOCX, PNG, JPG, JPEG.';
+  return null;
+}
 
 export default function ApplyPage() {
   const { jobId } = useParams();
@@ -10,6 +23,15 @@ export default function ApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', about_yourself: '' });
+  const [documents, setDocuments] = useState(
+    DOCUMENT_FIELDS.reduce((acc, field) => {
+      acc[field.name] = { file: null, error: '' };
+      return acc;
+    }, {})
+  );
+  const [uploadStatus, setUploadStatus] = useState({});
+  const [applicantId, setApplicantId] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,12 +50,81 @@ export default function ApplyPage() {
     };
   }, [jobId]);
 
+  function updateDocument(name, next) {
+    setDocuments((prev) => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        ...next,
+      },
+    }));
+  }
+
+  function getMissingRequiredDocuments() {
+    return DOCUMENT_FIELDS.filter((field) => field.required && !documents[field.name].file);
+  }
+
+  function getUploadedDocumentCount() {
+    return Object.values(documents).filter((docState) => docState.file).length;
+  }
+
+  async function uploadApplicantDocuments(applicantId, accessToken) {
+    for (const field of DOCUMENT_FIELDS) {
+      const fileState = documents[field.name];
+      if (!fileState.file) continue;
+
+      setUploadStatus((prev) => ({ ...prev, [field.name]: 'uploading' }));
+
+      const formData = new FormData();
+      formData.append('file', fileState.file);
+      formData.append('document_type', field.name);
+      if (accessToken) {
+        formData.append('access_token', accessToken);
+      } else {
+        formData.append('applicant_id', applicantId);
+      }
+
+      const response = await fetch('/api/recruitment/upload-document', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setUploadStatus((prev) => ({ ...prev, [field.name]: 'failed' }));
+        throw new Error(body.error || response.statusText || `Upload failed for ${field.label}`);
+      }
+
+      setUploadStatus((prev) => ({ ...prev, [field.name]: 'uploaded' }));
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+
+    const uploadedCount = getUploadedDocumentCount();
+    if (uploadedCount < 3) {
+      setError('Please upload at least three (3) supporting documents before submitting your application.');
+      setSubmitting(false);
+      return;
+    }
+
+    for (const field of DOCUMENT_FIELDS) {
+      const fileState = documents[field.name];
+      if (!fileState.file) continue;
+      const fileError = validateFile(fileState.file);
+      if (fileError) {
+        updateDocument(field.name, { error: fileError });
+        setError('Please fix file upload errors before submitting.');
+        setSubmitting(false);
+        return;
+      }
+    }
+
     try {
-      await publicApiFetch('/api/recruitment/apply', {
+      const response = await publicApiFetch('/api/recruitment/apply', {
         method: 'POST',
         body: JSON.stringify({
           job_position_id: jobId,
@@ -41,9 +132,20 @@ export default function ApplyPage() {
           email: form.email.trim(),
           phone: form.phone.trim() || null,
           about_yourself: form.about_yourself.trim() || null,
+          application_details: null,
         }),
       });
+
+      const applicantId = response.applicantId;
+      const accessToken = response.documentAccessToken;
+      if (!applicantId) {
+        throw new Error('Application ID missing from server response.');
+      }
+
+      await uploadApplicantDocuments(applicantId, accessToken);
       setSubmitted(true);
+      setApplicantId(applicantId);
+      setAccessToken(accessToken);
     } catch (err) {
       setError(err.body?.error || err.message || 'Apply failed');
     } finally {
@@ -51,9 +153,14 @@ export default function ApplyPage() {
     }
   }
 
+  function handleRemoveFile(name) {
+    updateDocument(name, { file: null, error: '' });
+    setUploadStatus((prev) => ({ ...prev, [name]: 'removed' }));
+  }
+
   return (
     <div className="apply-page">
-      <div className="apply-card">
+      <div className="apply-card apply-card--wide">
         <p className="apply-kicker">AWLMS · Public application</p>
         <h1>Apply for role</h1>
         {error ? (
@@ -72,6 +179,20 @@ export default function ApplyPage() {
             <p className="muted">
               We have received your application. You will be notified by email if you are selected for an AI interview.
             </p>
+            {applicantId && accessToken ? (
+              <div className="apply-note">
+                <p>
+                  Manage your submitted documents anytime using this secure link:
+                </p>
+                <p>
+                  <Link
+                    to={`/applicant-documents?applicantId=${encodeURIComponent(applicantId)}&token=${encodeURIComponent(accessToken)}`}
+                  >
+                    View and manage documents
+                  </Link>
+                </p>
+              </div>
+            ) : null}
             <p className="apply-foot">
               <Link to="/careers">← View other positions</Link>
               {' · '}
@@ -122,6 +243,29 @@ export default function ApplyPage() {
                   onChange={(e) => setForm((f) => ({ ...f, about_yourself: e.target.value }))}
                 />
               </label>
+
+              <div className="supporting-documents-section">
+                <h3>Supporting Documents</h3>
+                <p className="apply-note">Required documents must be uploaded before submission. Optional documents are encouraged but not required.</p>
+                {DOCUMENT_FIELDS.map((field) => (
+                  <DocumentUploadField
+                    key={field.name}
+                    label={field.label}
+                    name={field.name}
+                    required={field.required}
+                    file={documents[field.name].file}
+                    status={uploadStatus[field.name]}
+                    error={documents[field.name].error}
+                    onFileChange={(nextFile) => {
+                      const fileError = nextFile ? validateFile(nextFile) : field.required ? 'File is required.' : '';
+                      updateDocument(field.name, { file: nextFile, error: fileError });
+                      setUploadStatus((prev) => ({ ...prev, [field.name]: nextFile ? 'ready' : 'removed' }));
+                    }}
+                    onRemove={() => handleRemoveFile(field.name)}
+                  />
+                ))}
+              </div>
+
               <button type="submit" className="btn-primary" disabled={submitting}>
                 {submitting ? 'Submitting…' : 'Submit Application'}
               </button>

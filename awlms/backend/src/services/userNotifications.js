@@ -58,40 +58,9 @@ async function notifyManagersInDepartment(pool, departmentId, payload) {
   }
 }
 
-/**
- * When a performance staff alert is raised: HR + department managers (matches PerformanceStaffAlert audience).
- */
-async function notifyPerformanceIssueFromAlert(pool, {
-  staffAlertId,
-  employeeId,
-  departmentId,
-  title,
-  body,
-}) {
-  const payload = {
-    category: 'hr_performance_issue',
-    title,
-    body,
-    entityType: 'PerformanceStaffAlert',
-    entityId: staffAlertId,
-    metadata: { employee_id: employeeId },
-  };
-  await notifyAllHr(pool, payload);
-
-  await notifyManagersInDepartment(pool, departmentId, {
-    category: 'mgr_team_performance',
-    title,
-    body,
-    entityType: 'PerformanceStaffAlert',
-    entityId: staffAlertId,
-    metadata: { employee_id: employeeId },
-  });
-}
-
 module.exports = {
   insertUserNotification,
   notifyAllHr,
   notifyManagersInDepartment,
-  notifyPerformanceIssueFromAlert,
   getUserIdsByRole,
 };

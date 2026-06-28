@@ -1,17 +1,10 @@
 import { NavLink, Outlet, useMatch, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { useManagerDashboard } from '../contexts/ManagerDashboardContext.jsx';
 import AiChatBubble from '../components/AiChatBubble.jsx';
 
 const nav = [
   { section: 'OVERVIEW', items: [{ to: '/manager', label: 'Overview', end: true }] },
-  {
-    section: 'MODULES',
-    items: [
-      { to: '/manager/employees', label: 'Employees' },
-      { to: '/manager/monitoring', label: 'Team Performance' },
-    ],
-  },
+  { section: null, items: [{ to: '/manager/settings', label: 'Settings' }] },
 ];
 
 function getInitials(name = '') {
@@ -27,20 +20,16 @@ function getTodayLabel() {
 function ManagerHomeAiChat() {
   const isHome = useMatch({ path: '/manager', end: true });
   const isAiChat = useMatch({ path: '/manager/ai-chat', end: true });
-  const { data } = useManagerDashboard();
   if (!isHome || isAiChat) return null;
-
-  const alerts = data?.performanceAlerts ?? [];
-  const pendingRecs = data?.counts?.pendingRecommendations ?? 0;
   return (
     <AiChatBubble
-      notificationCount={alerts.length + pendingRecs}
-      subtitle="AI · Team Work Helper"
-      placeholder="Ask about your team, performance, or lifecycle…"
+      notificationCount={0}
+      subtitle="AI · Hiring Assistant"
+      placeholder="Ask about candidates, positions, or interviews…"
       suggestions={[
-        'Summarize open performance alerts',
-        'How do I submit a lifecycle recommendation?',
-        'Draft feedback for a team member',
+        'Show open job positions',
+        'How many applicants are pending review?',
+        'Summarize recent interview results',
         'What should I review this week?',
       ]}
     />
@@ -68,7 +57,7 @@ export default function ManagerLayout() {
       <aside className="hr-sidebar" aria-label="Manager navigation">
         <div className="hr-sidebar-brand">
           <div style={{ width: 32, height: 32, background: '#C4956D', borderRadius: 6, flexShrink: 0 }} />
-          <span className="hr-sidebar-logo">SUNNIES</span>
+          <span className="hr-sidebar-logo">AWLMS</span>
         </div>
 
         <nav className="hr-sidebar-nav" aria-label="Manager modules">

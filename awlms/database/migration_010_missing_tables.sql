@@ -4,7 +4,7 @@
 --
 -- These four tables have no equivalent in the existing schema.
 -- All other tables from the reference schema (users, departments, job_postings,
--- applicants, employee_performance, performance_alerts, lifecycle_events,
+-- applicants, employee_performance, performance_alerts,
 -- notifications) are already covered by existing tables and migrations.
 --
 -- Safe to run on any database created from schema.sql (migrations 001–009).
@@ -15,7 +15,7 @@ USE awlms;
 
 -- ============================================================
 -- interview_sessions
--- Tracks the lifecycle of a single AI interview session
+-- Tracks a single AI interview session
 -- tied to an Applicant and a JobPosition.
 -- ============================================================
 

@@ -806,6 +806,7 @@ export default function HrRecruitmentModule() {
                                       <th>Name / Email</th>
                                       <th>Status</th>
                                       <th>Interview</th>
+                                      <th>Documents</th>
                                       <th>About</th>
                                       <th>Actions</th>
                                     </tr>
@@ -821,6 +822,10 @@ export default function HrRecruitmentModule() {
                                           <span className="hr-pill">{statusLabel(a.hiring_decision)}</span>
                                         </td>
                                         <td className="muted">{a.interview_status || '—'}</td>
+                                        <td>
+                                          <div>{a.document_count} uploaded</div>
+                                          <div className="muted">{a.missing_required_documents ? `${a.missing_required_documents} required missing` : 'Required docs met'}</div>
+                                        </td>
                                         <td className="hr-preview">
                                           {a.about_yourself
                                             ? a.about_yourself.length > 120

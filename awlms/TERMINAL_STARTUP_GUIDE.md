@@ -245,12 +245,12 @@ Use these to test the system:
 HR Account:
   Email: hr@sunniesstudios.com
   Password: Demo123!
-  Access: Full HR dashboard, recruitment, lifecycle
+  Access: Full HR dashboard and recruitment workflows
 
 Manager Account:
   Email: manager@sunniesstudios.com
   Password: Demo123!
-  Access: Team performance, evaluations
+  Access: Team dashboard and hiring approvals
 
 Employee Account:
   Email: employee@sunniesstudios.com
@@ -268,10 +268,10 @@ When you run the system and demo:
 2. **Careers** - 25 real job positions
 3. **Application** - Resume upload, form filling
 4. **Interview** - Webcam, questions, recording
-5. **Monitoring** - Tab-switch detection, logging
+5. **AI Reports** - Interview scoring and candidate insights
 6. **HR Dashboard** - Applicant review, scoring
 7. **Email** - Notifications in inbox
-8. **Lifecycle** - Complete employee timeline
+8. **Recruitment** - Job listings and hiring pipeline
 
 ---
 

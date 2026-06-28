@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../../lib/api.js';
-import { useEmployeeWorkspace } from '../../contexts/EmployeeWorkspaceContext.jsx';
 
 function formatDate(value) {
   if (!value) return '—';
@@ -10,17 +9,20 @@ function formatDate(value) {
 }
 
 export default function EmployeeNotificationsPage() {
-  const { data: dash, reload } = useEmployeeWorkspace();
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
   async function loadList() {
     setLoadError('');
+    setLoading(true);
     try {
-      const json = await apiFetch('/api/employee/notifications');
+      const json = await apiFetch('/api/portal/notifications');
       setNotifications(json.notifications || []);
     } catch (err) {
       setLoadError(err.body?.error || err.message || 'Could not load notifications');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -30,29 +32,23 @@ export default function EmployeeNotificationsPage() {
 
   async function markRead(id) {
     try {
-      await apiFetch(`/api/employee/notifications/${id}/read`, { method: 'POST', body: '{}' });
+      await apiFetch(`/api/portal/notifications/${id}/read`, { method: 'POST', body: '{}' });
       await loadList();
-      reload();
     } catch (err) {
       setLoadError(err.body?.error || err.message || 'Could not mark as read');
     }
   }
 
-  if (!dash?.employee) {
-    return (
-      <div className="emp-panel">
-        <h1 className="emp-page-title">HR notifications</h1>
-        <p className="muted">{dash?.message || 'No employee profile linked.'}</p>
-      </div>
-    );
+  if (loading) {
+    return <p className="muted">Loading notifications…</p>;
   }
 
   return (
     <div className="emp-page">
       <header className="emp-page-head">
         <div>
-          <h1 className="emp-page-title">HR notifications</h1>
-          <p className="muted">Formal notices issued by Human Resources. Mark each as read after review.</p>
+          <h1 className="emp-page-title">Notifications</h1>
+          <p className="muted">Notices from HR. Mark each as read after review.</p>
         </div>
         <Link to="/employee" className="btn-secondary emp-link-btn">
           Overview

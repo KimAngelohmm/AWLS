@@ -1,6 +1,6 @@
-# AI-Powered Workforce Lifecycle Management System (AWLMS)
+# AI Recruitment & Interview Management System
 
-Full-stack web application: React (Vite) frontend, Node.js + Express backend, MySQL database.
+An AI-powered Recruitment and Interview Management System.
 
 ## Project structure
 
@@ -49,8 +49,6 @@ App defaults to `http://localhost:5173` with API requests proxied to the backend
 cd backend
 npm install
 npm run seed
-# Optional sample HR dashboard rows:
-npm run seed:hr-demo
 ```
 
 | Email | Role | Password |
@@ -61,7 +59,21 @@ npm run seed:hr-demo
 
 Set `JWT_SECRET` (16+ characters) in `backend/.env` for production. For local dev, a default secret is used when `NODE_ENV` is not `production`.
 
-**AI features:** set `OPENAI_API_KEY` (optional: `OPENAI_MODEL`, default `gpt-4o-mini`) in `backend/.env` for LLM interviews, lifecycle letters, and monitoring briefs. Without a key, template fallbacks are used where implemented.
+**AI features:** set `OPENAI_API_KEY` (optional: `OPENAI_MODEL`, default `gpt-4o-mini`) in `backend/.env` for LLM-powered interviews and AI scoring. Without a key, template fallbacks are used where implemented.
+
+## Features
+
+- AI-conducted interviews with role-specific questions
+- Resume screening and applicant tracking
+- Candidate evaluation and AI scoring
+- Recruitment analytics and hiring workflow
+- HR personnel and hiring manager dashboards
+
+## Stack
+
+- Backend: Express.js + MySQL
+- Frontend: React 18 + Vite
+- AI: OpenAI integration
 
 ## Tests
 
@@ -79,4 +91,3 @@ npm run restore:transcript
 ```
 
 Optional: pass explicit paths to `.jsonl` transcript files. Then re-apply any local fixes (e.g. `server.js` route mounting) if needed.
-

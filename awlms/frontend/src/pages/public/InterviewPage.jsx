@@ -13,10 +13,21 @@ export default function InterviewPage() {
   const [summary, setSummary] = useState('');
   const [aiRec, setAiRec] = useState('');
   const [loading, setLoading] = useState(true);
+  const [applicantName, setApplicantName] = useState('');
+  const [applicantEmail, setApplicantEmail] = useState('');
+  const [applicantPhone, setApplicantPhone] = useState('');
+  const [applicantAbout, setApplicantAbout] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
   const bottomRef = useRef(null);
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const [videoActive, setVideoActive] = useState(false);
   const [videoError, setVideoError] = useState('');
+  const [emotion, setEmotion] = useState('neutral');
+  const [expressionData, setExpressionData] = useState(null);
+  const faceDetectionInterval = useRef(null);
+  const faceApiRef = useRef(null);
 
   useEffect(() => {
     if (!token) {
@@ -31,6 +42,14 @@ export default function InterviewPage() {
         if (cancelled) return;
         setMessages(data.messages || []);
         setStatus(data.interviewStatus || 'in_progress');
+        setApplicantName(data.applicantName || '');
+        setApplicantEmail(data.applicantEmail || '');
+        setApplicantPhone(data.applicantPhone || '');
+        setApplicantAbout(data.applicantAbout || '');
+        setJobTitle(data.jobTitle || '');
+        if (data.hasPhoto) {
+          setPhotoUrl(`/api/recruitment/interview/${token}/photo`);
+        }
         if (data.interviewStatus === 'completed') {
           setSummary(data.assessmentSummary || '');
           setAiRec(data.aiRecommendation || '');
@@ -68,6 +87,10 @@ export default function InterviewPage() {
         console.log('Stream assigned to video element');
         setVideoActive(true);
         
+        // Initialize face-api after a short delay to let video load
+        setTimeout(() => {
+          initializeFaceDetection();
+        }, 500);
       }
     } catch (err) {
       console.error('Camera error:', err);
@@ -81,8 +104,78 @@ export default function InterviewPage() {
     }
   };
 
+  const initializeFaceDetection = async () => {
+    try {
+      const faceapi = faceApiRef.current || await import('@vladmandic/face-api');
+      faceApiRef.current = faceapi;
+
+      // Load models for face detection
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/';
+      await faceapi.nets.tinyFaceDetector.load(MODEL_URL);
+      await faceapi.nets.faceExpressionNet.load(MODEL_URL);
+      console.log('Face detection models loaded');
+      
+      // Start periodic face detection
+      if (faceDetectionInterval.current) clearInterval(faceDetectionInterval.current);
+      faceDetectionInterval.current = setInterval(detectFace, 300);
+    } catch (err) {
+      console.error('Failed to load face detection models:', err);
+    }
+  };
+
+  const detectFace = async () => {
+    try {
+      const faceapi = faceApiRef.current;
+      if (!faceapi || !videoRef.current || !videoRef.current.srcObject) return;
+      
+      const detections = await faceapi
+        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .withFaceExpressions();
+
+      if (detections) {
+        const expressions = detections.expressions;
+        // Find the dominant emotion
+        let dominantEmotion = 'neutral';
+        let maxScore = 0;
+        
+        for (const [emotion, score] of Object.entries(expressions)) {
+          if (score > maxScore) {
+            maxScore = score;
+            dominantEmotion = emotion;
+          }
+        }
+        
+        const confidence = Math.round(maxScore * 100);
+        setEmotion(dominantEmotion);
+        setExpressionData({
+          emotion: dominantEmotion,
+          confidence: confidence,
+          expressions: expressions,
+          timestamp: new Date().toISOString()
+        });
+
+        // Save expression data to backend
+        try {
+          await publicApiFetch(`/api/recruitment/interview/${token}/expression`, {
+            method: 'POST',
+            body: JSON.stringify({
+              emotion: dominantEmotion,
+              confidence: confidence,
+              expressions: expressions
+            })
+          });
+        } catch (err) {
+          console.warn('Could not save expression data:', err);
+        }
+      }
+    } catch (err) {
+      console.error('Face detection error:', err);
+    }
+  };
+
   useEffect(() => {
     return () => {
+      if (faceDetectionInterval.current) clearInterval(faceDetectionInterval.current);
       if (videoRef.current && videoRef.current.srcObject) {
         videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       }
@@ -145,8 +238,33 @@ export default function InterviewPage() {
           <div className="iv-header-info">
             <h1 className="iv-title">AI-Powered Interview</h1>
             <p className="iv-subtitle">
-              Answer one question at a time. The AI evaluates your responses against the role&apos;s competencies. Camera access is optional and used only for your live preview during the session.
+              {applicantName ? `Interview with ${applicantName}` : 'Answer one question at a time.'}
             </p>
+            {jobTitle && (
+              <p className="muted" style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                Position: <strong>{jobTitle}</strong>
+              </p>
+            )}
+            {photoUrl && (
+              <div style={{
+                marginTop: '1rem',
+                display: 'flex',
+                gap: '1rem',
+                alignItems: 'center',
+              }}>
+                <img src={photoUrl} alt={applicantName} style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '8px',
+                  border: '1px solid #444',
+                  objectFit: 'cover',
+                }} />
+                <div style={{ fontSize: '0.85rem' }}>
+                  {applicantEmail && <div>📧 {applicantEmail}</div>}
+                  {applicantPhone && <div>📱 {applicantPhone}</div>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -260,24 +378,6 @@ export default function InterviewPage() {
             justifyContent: 'center',
           }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              top: '0.4rem',
-              left: '0.4rem',
-              right: '0.4rem',
-              padding: '0.3rem 0.45rem',
-              borderRadius: '6px',
-              backgroundColor: 'rgba(15, 23, 42, 0.72)',
-              color: '#e5e7eb',
-              fontSize: '0.65rem',
-              lineHeight: 1.35,
-              zIndex: 2,
-            }}
-          >
-            Preview only. Interview scoring is based on your answers, not camera-based appearance analysis.
-          </div>
-
           {/* Video element always in DOM so ref connects */}
           <video
             ref={videoRef}

@@ -129,7 +129,7 @@ Browser:
     4. Interview system with webcam
     5. Tab-switch detection (try switching tabs!)
     6. HR dashboard review
-    7. Employee lifecycle tracking
+    7. Employee records and account tracking
     8. Email notifications
 
   Time needed: ~15 minutes

@@ -47,12 +47,30 @@ if not exist "node_modules" (
 )
 
 REM Run database seed
+echo Ensuring database schema exists...
+call npm run db:ensure
+if errorlevel 1 (
+    echo Database setup failed. Check MySQL and backend\.env settings.
+    pause
+    exit /b 1
+)
+
 echo Seeding database...
-call npm run seed >NUL 2>&1
+call npm run seed
+if errorlevel 1 (
+    echo Database seed failed.
+    pause
+    exit /b 1
+)
 
 REM Seed Sunnies positions
 echo Seeding Sunnies Studios positions...
-call node scripts/seed-sunnies-positions.js >NUL 2>&1
+call node scripts/seed-sunnies-positions.js
+if errorlevel 1 (
+    echo Sunnies positions seed failed.
+    pause
+    exit /b 1
+)
 
 echo ✓ Backend ready
 
