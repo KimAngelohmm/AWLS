@@ -2,21 +2,35 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 const ADMIN_NAV = [
-  { path: '/admin', label: 'Dashboard', icon: '📊' },
+  // Dashboard
+  { path: '/admin', label: 'Dashboard', icon: '📊', exact: true },
+  // HR Features
   { path: '/admin/recruitment', label: 'Recruitment', icon: '📋' },
+  { path: '/admin/applicants', label: 'Applicants', icon: '👤' },
   { path: '/admin/employees', label: 'Employees', icon: '👥' },
   { path: '/admin/hr-accounts', label: 'HR Accounts', icon: '🏢' },
-  { path: '/admin/departments', label: 'Departments', icon: '🏗️' },
-  { path: '/admin/positions', label: 'Job Positions', icon: '💼' },
-  { path: '/admin/reports', label: 'Reports', icon: '📈' },
+  { path: '/admin/messages', label: 'Messages', icon: '💬' },
+  { path: '/admin/history', label: 'History', icon: '📜' },
+  { path: '/admin/documents', label: 'Documents', icon: '📄' },
+  { path: '/admin/ai-reports', label: 'AI Reports', icon: '🤖' },
+  // Admin Exclusive
+  { path: '/admin/users', label: 'User Management', icon: '⚙️' },
   { path: '/admin/audit-logs', label: 'Audit Logs', icon: '🔒' },
-  { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
+  { path: '/admin/settings', label: 'System Settings', icon: '⚙️' },
+  // AI Chat
   { path: '/admin/ai-chat', label: 'AI Chat', icon: '🤖' },
 ];
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+
+  const isActive = (item) => {
+    if (item.exact) {
+      return location.pathname === item.path;
+    }
+    return location.pathname.startsWith(item.path);
+  };
 
   return (
     <div className="admin-layout">
@@ -30,7 +44,7 @@ export default function AdminLayout() {
             <Link
               key={item.path}
               to={item.path}
-              className={`admin-nav-item ${location.pathname === item.path ? 'admin-nav-item--active' : ''}`}
+              className={`admin-nav-item ${isActive(item) ? 'admin-nav-item--active' : ''}`}
             >
               <span className="admin-nav-icon">{item.icon}</span>
               <span>{item.label}</span>
