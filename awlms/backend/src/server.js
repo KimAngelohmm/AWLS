@@ -15,6 +15,7 @@ const managerNotificationsRouter = require('./routes/managerNotifications');
 const aiChatRouter = require('./routes/aiChat');
 const publicApiRouter = require('./routes/publicApi');
 const adminRouter = require('./routes/admin');
+const applicantAuthRouter = require('./routes/applicantAuth');
 const { authenticateToken } = require('./middleware/auth');
 const { requireRole } = require('./middleware/requireRole');
 
@@ -116,6 +117,7 @@ app.use('/api/recruitment', recruitmentPublicRouter);
 app.use('/api/recruitment', documentsRouter);
 app.use('/api/ai/chat', aiChatRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/applicant-auth', applicantAuthRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

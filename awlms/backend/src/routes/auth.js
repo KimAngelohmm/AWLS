@@ -25,6 +25,8 @@ function signToken(user, rememberMe) {
 
 const VALID_ROLES = new Set(['hr', 'manager', 'employee', 'admin']);
 
+// Note: 'applicant' role uses separate authentication via applicantAuth.js routes
+
 router.post('/login', async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   const password = String(req.body?.password || '');

@@ -27,6 +27,8 @@ import ApplyPage from './pages/public/ApplyPage.jsx';
 import ApplicantDocumentsPage from './pages/public/ApplicantDocumentsPage.jsx';
 import CareersPage from './pages/public/CareersPage.jsx';
 import InterviewPage from './pages/public/InterviewPage.jsx';
+import ApplicantVerificationPage from './pages/public/ApplicantVerificationPage.jsx';
+import ApplicantRegisterPage from './pages/public/ApplicantRegisterPage.jsx';
 import ManagerOnlyRoute from './components/ManagerOnlyRoute.jsx';
 import ManagerLayout from './layouts/ManagerLayout.jsx';
 import ManagerHome from './pages/manager/ManagerHome.jsx';
@@ -47,6 +49,8 @@ export default function App() {
           <Route path="/applicant-documents" element={<ApplicantDocumentsPage />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/interview/:token" element={<InterviewPage />} />
+          <Route path="/verify-email" element={<ApplicantVerificationPage />} />
+          <Route path="/register" element={<ApplicantRegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/applicant-portal" element={<ApplicantPortalPage />} />
