@@ -16,7 +16,8 @@ export default function HrOnlyRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== 'hr') {
+  // Admin has full access to HR features
+  if (user.role !== 'hr' && user.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
 

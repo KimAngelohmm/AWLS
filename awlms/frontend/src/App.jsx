@@ -38,6 +38,14 @@ import AdminOnlyRoute from './components/AdminOnlyRoute.jsx';
 import AdminLayout from './layouts/AdminLayout.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminHrAccounts from './pages/admin/AdminHrAccounts.jsx';
+import AdminUserManagement from './pages/admin/AdminUserManagement.jsx';
+import AdminAuditLogs from './pages/admin/AdminAuditLogs.jsx';
+import AdminSystemSettings from './pages/admin/AdminSystemSettings.jsx';
+import AdminRecruitmentOverview from './pages/admin/AdminRecruitmentOverview.jsx';
+import AdminSystemMonitoring from './pages/admin/AdminSystemMonitoring.jsx';
+import AdminAIAnalytics from './pages/admin/AdminAIAnalytics.jsx';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements.jsx';
+import AdminDatabaseTools from './pages/admin/AdminDatabaseTools.jsx';
 
 export default function App() {
   return (
@@ -57,6 +65,8 @@ export default function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            
+            {/* HR Personnel Routes */}
             <Route path="/hr" element={<HrOnlyRoute />}>
               <Route element={<HrLayout />}>
                 <Route index element={<HrDashboardHome />} />
@@ -70,6 +80,8 @@ export default function App() {
                 <Route path="ai-chat" element={<HrAiChatPage variant="hr" />} />
               </Route>
             </Route>
+
+            {/* Employee Routes */}
             <Route path="/employee" element={<EmployeeOnlyRoute />}>
               <Route element={<EmployeeLayout />}>
                 <Route index element={<EmployeeDashboardHome />} />
@@ -79,6 +91,8 @@ export default function App() {
                 <Route path="ai-chat" element={<HrAiChatPage variant="employee" />} />
               </Route>
             </Route>
+
+            {/* Manager Routes */}
             <Route path="/manager" element={<ManagerOnlyRoute />}>
               <Route element={<ManagerLayout />}>
                 <Route index element={<ManagerHome />} />
@@ -87,10 +101,29 @@ export default function App() {
                 <Route path="ai-chat" element={<HrAiChatPage variant="manager" />} />
               </Route>
             </Route>
+
+            {/* Administrator Routes - Full HR + Manager access */}
             <Route path="/admin" element={<AdminOnlyRoute />}>
               <Route element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
+                {/* HR Features */}
                 <Route path="hr-accounts" element={<AdminHrAccounts />} />
+                <Route path="recruitment" element={<AdminRecruitmentOverview />} />
+                <Route path="ai-reports" element={<HrAiReportsPage />} />
+                <Route path="documents" element={<HrDocumentVerificationPage />} />
+                <Route path="employees" element={<HrEmployeesPage />} />
+                <Route path="messages" element={<HrMessagesPage />} />
+                <Route path="history" element={<HrHistoryPage />} />
+                <Route path="settings" element={<HrSettingsPage />} />
+                {/* Admin Exclusive Features */}
+                <Route path="users" element={<AdminUserManagement />} />
+                <Route path="audit-logs" element={<AdminAuditLogs />} />
+                <Route path="admin-settings" element={<AdminSystemSettings />} />
+                <Route path="monitoring" element={<AdminSystemMonitoring />} />
+                <Route path="ai-analytics" element={<AdminAIAnalytics />} />
+                <Route path="announcements" element={<AdminAnnouncements />} />
+                <Route path="database" element={<AdminDatabaseTools />} />
+                <Route path="ai-chat" element={<HrAiChatPage variant="admin" />} />
               </Route>
             </Route>
           </Route>

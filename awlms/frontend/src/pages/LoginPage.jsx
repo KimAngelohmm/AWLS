@@ -10,6 +10,15 @@ const ROLES = [
   { value: 'applicant', label: 'Applicant' },
 ];
 
+// Role-based dashboard routing
+const ROLE_DASHBOARD_MAP = {
+  admin: '/admin',
+  hr: '/hr',
+  manager: '/manager',
+  employee: '/employee',
+  applicant: '/applicant-portal',
+};
+
 const REMEMBER_KEY = 'awlms_remember';
 
 function loadSavedCredentials() {
@@ -26,7 +35,7 @@ export default function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || '/dashboard';
+  const from = location.state?.from;
 
   const saved = loadSavedCredentials();
 
@@ -53,7 +62,9 @@ export default function LoginPage() {
       } else {
         localStorage.removeItem(REMEMBER_KEY);
       }
-      navigate(from, { replace: true });
+      // Redirect to role-specific dashboard
+      const dashboard = from || ROLE_DASHBOARD_MAP[activeRole] || '/dashboard';
+      navigate(dashboard, { replace: true });
     } catch (err) {
       const errorData = err.body || {};
       // Check if this is an unverified applicant error

@@ -13,6 +13,10 @@ export default function DashboardPage() {
     );
   }
 
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
   if (user?.role === 'hr') {
     return <Navigate to="/hr" replace />;
   }

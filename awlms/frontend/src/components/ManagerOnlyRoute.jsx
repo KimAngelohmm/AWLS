@@ -16,7 +16,8 @@ export default function ManagerOnlyRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== 'manager') {
+  // Admin has full access to Manager features
+  if (user.role !== 'manager' && user.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
 
