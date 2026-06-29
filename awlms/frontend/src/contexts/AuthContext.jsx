@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../lib/api.js';
+import { publicApiFetch } from '../lib/publicApi.js';
 import { clearToken, readToken, writeToken } from '../lib/tokenStorage.js';
 
 const AuthContext = createContext(null);
@@ -21,7 +22,14 @@ export function AuthProvider({ children }) {
       return;
     }
     try {
-      const data = await apiFetch('/api/auth/me');
+      // Check both auth endpoints based on stored role
+      const storedRole = localStorage.getItem('awlms_role');
+      let data;
+      if (storedRole === 'applicant') {
+        data = await publicApiFetch('/api/applicant-auth/me');
+      } else {
+        data = await apiFetch('/api/auth/me');
+      }
       setUser(data.user);
     } catch {
       clearToken();
@@ -36,11 +44,23 @@ export function AuthProvider({ children }) {
   }, [refreshUser]);
 
   const login = useCallback(async (email, password, rememberMe, selectedRole) => {
-    const data = await apiFetch('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, rememberMe, selectedRole }),
-    });
+    let data;
+    
+    // Use different API based on role
+    if (selectedRole === 'applicant') {
+      data = await publicApiFetch('/api/applicant-auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, rememberMe }),
+      });
+    } else {
+      data = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, rememberMe, selectedRole }),
+      });
+    }
+    
     writeToken(data.token, rememberMe);
+    localStorage.setItem('awlms_role', selectedRole);
     setUser(data.user);
     return data.user;
   }, []);

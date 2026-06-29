@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { apiFetch } from '../lib/api.js';
 
 const ROLES = [
+  { value: 'admin', label: 'Administrator' },
   { value: 'hr', label: 'HR Personnel' },
   { value: 'manager', label: 'Manager' },
-  { value: 'employee', label: 'Employee' },
+  { value: 'applicant', label: 'Applicant' },
 ];
 
 const REMEMBER_KEY = 'awlms_remember';
@@ -32,7 +34,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState(saved?.password ?? '');
   const [rememberMe, setRememberMe] = useState(Boolean(saved));
   const [showPassword, setShowPassword] = useState(false);
-  const [activeRole, setActiveRole] = useState('hr');
+  const [activeRole, setActiveRole] = useState('admin');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,9 +55,29 @@ export default function LoginPage() {
       }
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.body?.error || err.message || 'Sign-in failed');
+      const errorData = err.body || {};
+      // Check if this is an unverified applicant error
+      if (errorData.needsVerification) {
+        setError('Your account has not been verified. Please check your email for the 6-digit verification code.');
+      } else {
+        setError(errorData.error || err.message || 'Sign-in failed');
+      }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResendVerification(e) {
+    e.preventDefault();
+    setError('');
+    try {
+      await apiFetch('/api/applicant-auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      setError('Verification code has been resent to your email.');
+    } catch (err) {
+      setError(err.body?.error || err.message || 'Failed to resend verification code');
     }
   }
 
@@ -113,7 +135,7 @@ export default function LoginPage() {
             Use the credentials issued to you by HR.
           </p>
 
-          {/* Role selector tabs */}
+          {/* Role selector tabs - horizontal segmented control */}
           <div className="signin-role-selector">
             {ROLES.map((role) => (
               <button
@@ -132,6 +154,15 @@ export default function LoginPage() {
             {error && (
               <div className="signin-alert" role="alert">
                 {error}
+                {activeRole === 'applicant' && error.includes('not been verified') && (
+                  <button
+                    type="button"
+                    className="signin-resend-btn"
+                    onClick={handleResendVerification}
+                  >
+                    Resend Verification Code
+                  </button>
+                )}
               </div>
             )}
 
@@ -217,6 +248,11 @@ export default function LoginPage() {
               <Link to="/applicant-portal" className="signin-applicant-link">
                 Job listings
               </Link>
+              {activeRole === 'applicant' && (
+                <Link to="/register" className="signin-register-link">
+                  Create an account
+                </Link>
+              )}
             </div>
           </form>
         </div>
