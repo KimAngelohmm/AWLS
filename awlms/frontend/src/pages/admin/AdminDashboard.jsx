@@ -124,7 +124,7 @@ export default function AdminDashboard() {
             <span className="action-icon">📜</span>
             <span className="action-label">Audit Logs</span>
           </Link>
-          <Link to="/admin/settings" className="admin-action-card">
+          <Link to="/admin/admin-settings" className="admin-action-card">
             <span className="action-icon">⚙️</span>
             <span className="action-label">Settings</span>
           </Link>

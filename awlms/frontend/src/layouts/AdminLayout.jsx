@@ -26,7 +26,7 @@ const ADMIN_NAV = [
     { path: '/admin/audit-logs', label: 'Audit Logs', icon: '🔒' },
     { path: '/admin/announcements', label: 'Announcements', icon: '📢' },
     { path: '/admin/database', label: 'Database Tools', icon: '🗄️' },
-    { path: '/admin/admin-settings', label: 'System Settings', icon: '⚙️' },
+    { path: '/admin/admin-settings', label: 'Settings', icon: '⚙️' },
   ]},
   // AI Chat
   { section: null, items: [

@@ -298,29 +298,6 @@ router.get('/applicants', async (req, res) => {
   }
 });
 
-// GET /api/admin/audit-logs - System audit logs (placeholder)
-router.get('/audit-logs', async (req, res) => {
-  let pool;
-  try {
-    pool = getPool();
-  } catch {
-    return res.status(503).json({ error: 'Database not available' });
-  }
-
-  try {
-    const [rows] = await pool.query(
-      `SELECT u.full_name, u.email, u.role, u.last_login_at, u.created_at
-       FROM users u
-       ORDER BY u.updated_at DESC
-       LIMIT 100`
-    );
-    return res.json({ logs: rows, note: 'Full audit logging to be implemented' });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Failed to load audit logs' });
-  }
-});
-
 // GET /api/admin/all-users - List all users (admin view)
 router.get('/all-users', async (req, res) => {
   let pool;
