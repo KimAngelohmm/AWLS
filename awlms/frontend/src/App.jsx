@@ -42,6 +42,10 @@ import AdminUserManagement from './pages/admin/AdminUserManagement.jsx';
 import AdminAuditLogs from './pages/admin/AdminAuditLogs.jsx';
 import AdminSystemSettings from './pages/admin/AdminSystemSettings.jsx';
 import AdminRecruitmentOverview from './pages/admin/AdminRecruitmentOverview.jsx';
+import AdminSystemMonitoring from './pages/admin/AdminSystemMonitoring.jsx';
+import AdminAIAnalytics from './pages/admin/AdminAIAnalytics.jsx';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements.jsx';
+import AdminDatabaseTools from './pages/admin/AdminDatabaseTools.jsx';
 
 export default function App() {
   return (
@@ -110,10 +114,15 @@ export default function App() {
                 <Route path="employees" element={<HrEmployeesPage />} />
                 <Route path="messages" element={<HrMessagesPage />} />
                 <Route path="history" element={<HrHistoryPage />} />
+                <Route path="settings" element={<HrSettingsPage />} />
                 {/* Admin Exclusive Features */}
                 <Route path="users" element={<AdminUserManagement />} />
                 <Route path="audit-logs" element={<AdminAuditLogs />} />
-                <Route path="settings" element={<AdminSystemSettings />} />
+                <Route path="admin-settings" element={<AdminSystemSettings />} />
+                <Route path="monitoring" element={<AdminSystemMonitoring />} />
+                <Route path="ai-analytics" element={<AdminAIAnalytics />} />
+                <Route path="announcements" element={<AdminAnnouncements />} />
+                <Route path="database" element={<AdminDatabaseTools />} />
                 <Route path="ai-chat" element={<HrAiChatPage variant="admin" />} />
               </Route>
             </Route>
