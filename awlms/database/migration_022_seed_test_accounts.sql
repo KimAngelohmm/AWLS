@@ -9,7 +9,12 @@ USE awlms;
 
 -- Administrator Account (created in migration_020)
 -- Email: admin@awlms.com | Password: Admin123!
-UPDATE `users` SET `password_hash` = '$2a$10$3o6YnzOD9JEopecYrCHTmujOOR/jL4laciabsCSRuhD5Mj08823y6' WHERE `email` = 'admin@awlms.com';
+UPDATE `users` 
+SET `password_hash` = '$2a$10$3o6YnzOD9JEopecYrCHTmujOOR/jL4laciabsCSRuhD5Mj08823y6',
+    `role` = 'admin',
+    `is_active` = 1,
+    `is_verified` = 1
+WHERE `email` = 'admin@awlms.com';
 
 -- HR Account
 -- Email: ana.reyes@company.com | Password: HRPassword123!
