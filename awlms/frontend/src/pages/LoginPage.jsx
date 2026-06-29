@@ -6,6 +6,7 @@ const ROLES = [
   { value: 'hr', label: 'HR Personnel' },
   { value: 'manager', label: 'Manager' },
   { value: 'employee', label: 'Employee' },
+  { value: 'admin', label: 'Administrator' },
 ];
 
 const REMEMBER_KEY = 'awlms_remember';

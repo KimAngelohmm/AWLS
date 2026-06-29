@@ -32,6 +32,10 @@ import ManagerLayout from './layouts/ManagerLayout.jsx';
 import ManagerHome from './pages/manager/ManagerHome.jsx';
 import ManagerEmployeesPage from './pages/manager/ManagerEmployeesPage.jsx';
 import ManagerSettingsPage from './pages/manager/ManagerSettingsPage.jsx';
+import AdminOnlyRoute from './components/AdminOnlyRoute.jsx';
+import AdminLayout from './layouts/AdminLayout.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminHrAccounts from './pages/admin/AdminHrAccounts.jsx';
 
 export default function App() {
   return (
@@ -77,6 +81,12 @@ export default function App() {
                 <Route path="employees" element={<ManagerEmployeesPage />} />
                 <Route path="settings" element={<ManagerSettingsPage />} />
                 <Route path="ai-chat" element={<HrAiChatPage variant="manager" />} />
+              </Route>
+            </Route>
+            <Route path="/admin" element={<AdminOnlyRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="hr-accounts" element={<AdminHrAccounts />} />
               </Route>
             </Route>
           </Route>
