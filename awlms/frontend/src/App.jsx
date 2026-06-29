@@ -27,11 +27,17 @@ import ApplyPage from './pages/public/ApplyPage.jsx';
 import ApplicantDocumentsPage from './pages/public/ApplicantDocumentsPage.jsx';
 import CareersPage from './pages/public/CareersPage.jsx';
 import InterviewPage from './pages/public/InterviewPage.jsx';
+import ApplicantVerificationPage from './pages/public/ApplicantVerificationPage.jsx';
+import ApplicantRegisterPage from './pages/public/ApplicantRegisterPage.jsx';
 import ManagerOnlyRoute from './components/ManagerOnlyRoute.jsx';
 import ManagerLayout from './layouts/ManagerLayout.jsx';
 import ManagerHome from './pages/manager/ManagerHome.jsx';
 import ManagerEmployeesPage from './pages/manager/ManagerEmployeesPage.jsx';
 import ManagerSettingsPage from './pages/manager/ManagerSettingsPage.jsx';
+import AdminOnlyRoute from './components/AdminOnlyRoute.jsx';
+import AdminLayout from './layouts/AdminLayout.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminHrAccounts from './pages/admin/AdminHrAccounts.jsx';
 
 export default function App() {
   return (
@@ -43,6 +49,8 @@ export default function App() {
           <Route path="/applicant-documents" element={<ApplicantDocumentsPage />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/interview/:token" element={<InterviewPage />} />
+          <Route path="/verify-email" element={<ApplicantVerificationPage />} />
+          <Route path="/register" element={<ApplicantRegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/applicant-portal" element={<ApplicantPortalPage />} />
@@ -77,6 +85,12 @@ export default function App() {
                 <Route path="employees" element={<ManagerEmployeesPage />} />
                 <Route path="settings" element={<ManagerSettingsPage />} />
                 <Route path="ai-chat" element={<HrAiChatPage variant="manager" />} />
+              </Route>
+            </Route>
+            <Route path="/admin" element={<AdminOnlyRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="hr-accounts" element={<AdminHrAccounts />} />
               </Route>
             </Route>
           </Route>
