@@ -1,8 +1,16 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
-export default function AdminOnlyRoute({ children }) {
-  const { user } = useAuth();
+export default function AdminOnlyRoute() {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="page-center">
+        <p className="muted">Loading session…</p>
+      </div>
+    );
+  }
   
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -12,5 +20,5 @@ export default function AdminOnlyRoute({ children }) {
     return <Navigate to="/dashboard" replace />;
   }
   
-  return children;
+  return <Outlet />;
 }
